@@ -1083,6 +1083,482 @@ function LoginPage({ nav }) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   ADMIN DASHBOARD — product management, orders, customers, messages
+   ═══════════════════════════════════════════════════════════════════════════ */
+function AdminDashboard({ nav }) {
+  const [adminAuth, setAdminAuth] = useState(false);
+  const [adminEmail, setAdminEmail] = useState("");
+  const [adminPw, setAdminPw] = useState("");
+  const [adminError, setAdminError] = useState("");
+  const [tab, setTab] = useState("dashboard");
+  const [products, setProducts] = useState([...PRODUCTS]);
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [orders, setOrders] = useState(() => [
+    { id: "ORD-1001", customer: "Marcus Thompson", email: "marcus@email.com", items: 3, total: 89.97, status: "delivered", date: "2026-09-08" },
+    { id: "ORD-1002", customer: "Sarah Kim", email: "sarah@email.com", items: 2, total: 59.98, status: "shipped", date: "2026-09-09" },
+    { id: "ORD-1003", customer: "DeAndre Wilson", email: "deandre@email.com", items: 1, total: 29.99, status: "paid", date: "2026-09-10" },
+    { id: "ORD-1004", customer: "Jessica Moore", email: "jessica@email.com", items: 4, total: 119.96, status: "pending", date: "2026-09-11" },
+    { id: "ORD-1005", customer: "Tyler Robinson", email: "tyler@email.com", items: 2, total: 64.98, status: "paid", date: "2026-09-11" },
+  ]);
+  const [messages, setMessages] = useState([
+    { id: 1, name: "Alex Chen", email: "alex@email.com", subject: "Size exchange request", message: "Hi, I ordered a Large but need an XL. Order #ORD-998. Can I exchange?", date: "2026-09-10", read: false },
+    { id: 2, name: "Priya Patel", email: "priya@email.com", subject: "International shipping question", message: "Do you ship to India? What are the costs and delivery times?", date: "2026-09-09", read: true },
+    { id: 3, name: "Jordan Smith", email: "jordan@email.com", subject: "Wholesale inquiry", message: "I run a sports shop and would love to carry your tees. Do you offer wholesale pricing?", date: "2026-09-08", read: false },
+  ]);
+
+  // Admin login
+  const handleAdminLogin = () => {
+    // Demo credentials — in production this hits the backend /api/auth/login
+    if (adminEmail === "admin@sportsvestis.com" && adminPw === "Admin123!") {
+      setAdminAuth(true);
+      setAdminError("");
+    } else {
+      setAdminError("Invalid credentials. Demo: admin@sportsvestis.com / Admin123!");
+    }
+  };
+
+  // Product form state
+  const emptyProduct = { name: "", price: 29.99, cat: "football", badge: "", desc: "" };
+  const [formData, setFormData] = useState(emptyProduct);
+
+  const handleSaveProduct = () => {
+    if (!formData.name || !formData.price || !formData.cat) return;
+    if (editingProduct) {
+      setProducts(prev => prev.map(p => p.id === editingProduct.id ? { ...p, ...formData, price: parseFloat(formData.price) } : p));
+      setEditingProduct(null);
+    } else {
+      setProducts(prev => [...prev, { ...formData, id: Date.now(), price: parseFloat(formData.price), badge: formData.badge || null }]);
+    }
+    setFormData(emptyProduct);
+    setShowAddForm(false);
+  };
+
+  const handleDeleteProduct = (id) => {
+    if (confirm("Delete this product? This cannot be undone.")) {
+      setProducts(prev => prev.filter(p => p.id !== id));
+    }
+  };
+
+  const updateOrderStatus = (id, newStatus) => {
+    setOrders(prev => prev.map(o => o.id === id ? { ...o, status: newStatus } : o));
+  };
+
+  const markRead = (id) => {
+    setMessages(prev => prev.map(m => m.id === id ? { ...m, read: true } : m));
+  };
+
+  const deleteMessage = (id) => {
+    setMessages(prev => prev.filter(m => m.id !== id));
+  };
+
+  // Stats
+  const totalRevenue = orders.reduce((a, o) => a + o.total, 0);
+  const pendingOrders = orders.filter(o => o.status === "pending" || o.status === "paid").length;
+  const unreadMessages = messages.filter(m => !m.read).length;
+
+  const statusColor = (s) => {
+    const map = { pending: "#ff9500", paid: "#00b4ff", shipped: "#7b2ff7", delivered: "#00cc66", cancelled: "#ff3b30" };
+    return map[s] || "#888";
+  };
+
+  // ── Admin Login Screen ─────────────────────────────────────────────────
+  if (!adminAuth) {
+    return (
+      <section style={{ minHeight: "80vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 24px" }}>
+        <div style={{ width: "100%", maxWidth: 400 }}>
+          <button onClick={() => nav("home")} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, color: "rgba(255,255,255,.4)", marginBottom: 32, cursor: "pointer", background: "none", border: "none", fontFamily: "inherit" }}>
+            <Icon.ArrowLeft /> Back to store
+          </button>
+          <div className="glass-card" style={{ padding: "36px 32px", borderRadius: 24 }}>
+            <div style={{ textAlign: "center", marginBottom: 28 }}>
+              <div style={{ width: 48, height: 48, borderRadius: 14, background: "linear-gradient(135deg,#ff6b00,#ff3b30)", display: "inline-flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 18, marginBottom: 16 }}>⚙</div>
+              <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 6 }}>Admin Panel</h2>
+              <p style={{ fontSize: 13, color: "rgba(255,255,255,.4)" }}>Sign in to manage your store</p>
+            </div>
+            {adminError && <div style={{ padding: "10px 14px", borderRadius: 10, background: "rgba(255,60,60,.1)", border: "1px solid rgba(255,60,60,.2)", marginBottom: 16, fontSize: 12, color: "#ff6666" }}>{adminError}</div>}
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 6, color: "rgba(255,255,255,.6)" }}>Admin Email</label>
+              <input value={adminEmail} onChange={e => setAdminEmail(e.target.value)} placeholder="admin@sportsvestis.com" className="glass-input" style={{ width: "100%" }} />
+            </div>
+            <div style={{ marginBottom: 24 }}>
+              <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 6, color: "rgba(255,255,255,.6)" }}>Password</label>
+              <input type="password" value={adminPw} onChange={e => setAdminPw(e.target.value)} placeholder="Enter admin password" className="glass-input" style={{ width: "100%" }} onKeyDown={e => e.key === "Enter" && handleAdminLogin()} />
+            </div>
+            <button className="btn-primary" style={{ width: "100%", textAlign: "center" }} onClick={handleAdminLogin}>Sign In to Dashboard</button>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // ── Sidebar Tab Button ─────────────────────────────────────────────────
+  const TabBtn = ({ id, label, icon, count }) => (
+    <button onClick={() => setTab(id)} style={{
+      display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "11px 16px", borderRadius: 10,
+      fontSize: 14, fontWeight: tab === id ? 700 : 500, textAlign: "left", cursor: "pointer",
+      background: tab === id ? "rgba(0,180,255,.12)" : "transparent",
+      color: tab === id ? "#00b4ff" : "rgba(255,255,255,.5)",
+      border: "none", fontFamily: "inherit", transition: "all .2s",
+    }}>
+      <span style={{ fontSize: 18 }}>{icon}</span>
+      <span style={{ flex: 1 }}>{label}</span>
+      {count > 0 && <span style={{ background: "#ff3b30", color: "#fff", borderRadius: 20, padding: "2px 8px", fontSize: 11, fontWeight: 700 }}>{count}</span>}
+    </button>
+  );
+
+  // ── Admin Dashboard Rendered ───────────────────────────────────────────
+  return (
+    <section style={{ padding: "24px", minHeight: "100vh" }}>
+      <div style={{ maxWidth: 1400, margin: "0 auto" }}>
+        {/* Top bar */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 28 }}>
+          <div>
+            <h1 style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-.02em" }}>Store Admin</h1>
+            <p style={{ fontSize: 13, color: "rgba(255,255,255,.35)", marginTop: 4 }}>Welcome back, Admin</p>
+          </div>
+          <div style={{ display: "flex", gap: 10 }}>
+            <button className="btn-secondary" onClick={() => nav("home")} style={{ padding: "10px 20px", fontSize: 13 }}>View Store</button>
+            <button onClick={() => { setAdminAuth(false); setAdminEmail(""); setAdminPw(""); }} style={{ padding: "10px 20px", borderRadius: 50, background: "rgba(255,60,60,.1)", border: "1px solid rgba(255,60,60,.2)", color: "#ff6666", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Sign Out</button>
+          </div>
+        </div>
+
+        <div className="admin-layout" style={{ display: "flex", gap: 24 }}>
+          {/* Sidebar */}
+          <div className="admin-sidebar" style={{ width: 220, flexShrink: 0 }}>
+            <div className="glass-card" style={{ padding: 12, borderRadius: 16 }}>
+              <TabBtn id="dashboard" label="Dashboard" icon="📊" />
+              <TabBtn id="products" label="Products" icon="👕" />
+              <TabBtn id="orders" label="Orders" icon="📦" count={pendingOrders} />
+              <TabBtn id="customers" label="Customers" icon="👥" />
+              <TabBtn id="messages" label="Messages" icon="✉️" count={unreadMessages} />
+              <TabBtn id="settings" label="Settings" icon="⚙️" />
+            </div>
+          </div>
+
+          {/* Main content */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+
+            {/* ── DASHBOARD TAB ──────────────────────────────────────── */}
+            {tab === "dashboard" && (
+              <div>
+                {/* Stat cards */}
+                <div className="admin-stats" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16, marginBottom: 28 }}>
+                  {[
+                    { label: "Total Revenue", value: `$${totalRevenue.toFixed(2)}`, icon: "💰", color: "#00cc66" },
+                    { label: "Total Orders", value: orders.length, icon: "📦", color: "#00b4ff" },
+                    { label: "Products", value: products.length, icon: "👕", color: "#7b2ff7" },
+                    { label: "Pending", value: pendingOrders, icon: "⏳", color: "#ff9500" },
+                  ].map((s, i) => (
+                    <div key={i} className="glass-card" style={{ padding: 20, borderRadius: 16 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
+                        <span style={{ fontSize: 12, color: "rgba(255,255,255,.4)", fontWeight: 600 }}>{s.label}</span>
+                        <span style={{ fontSize: 22 }}>{s.icon}</span>
+                      </div>
+                      <p style={{ fontSize: 28, fontWeight: 800, color: s.color }}>{s.value}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Recent orders table */}
+                <div className="glass-card" style={{ padding: 24, borderRadius: 16 }}>
+                  <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>Recent Orders</h3>
+                  <div style={{ overflowX: "auto" }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                      <thead>
+                        <tr style={{ borderBottom: "1px solid rgba(255,255,255,.06)" }}>
+                          {["Order ID", "Customer", "Items", "Total", "Status", "Date"].map(h => (
+                            <th key={h} style={{ textAlign: "left", padding: "10px 12px", color: "rgba(255,255,255,.4)", fontWeight: 600, fontSize: 12 }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {orders.slice(0, 5).map(o => (
+                          <tr key={o.id} style={{ borderBottom: "1px solid rgba(255,255,255,.03)" }}>
+                            <td style={{ padding: "12px", fontWeight: 600 }}>{o.id}</td>
+                            <td style={{ padding: "12px" }}>{o.customer}</td>
+                            <td style={{ padding: "12px" }}>{o.items}</td>
+                            <td style={{ padding: "12px", fontWeight: 700 }}>${o.total.toFixed(2)}</td>
+                            <td style={{ padding: "12px" }}><span style={{ padding: "4px 10px", borderRadius: 20, fontSize: 11, fontWeight: 700, background: `${statusColor(o.status)}20`, color: statusColor(o.status) }}>{o.status}</span></td>
+                            <td style={{ padding: "12px", color: "rgba(255,255,255,.4)" }}>{o.date}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── PRODUCTS TAB ────────────────────────────────────────── */}
+            {tab === "products" && (
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+                  <h3 style={{ fontSize: 18, fontWeight: 700 }}>Products ({products.length})</h3>
+                  <button className="btn-primary" style={{ padding: "10px 24px", fontSize: 13 }} onClick={() => { setShowAddForm(true); setEditingProduct(null); setFormData(emptyProduct); }}>+ Add Product</button>
+                </div>
+
+                {/* Add/Edit form */}
+                {showAddForm && (
+                  <div className="glass-card" style={{ padding: 24, borderRadius: 16, marginBottom: 20 }}>
+                    <h4 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16 }}>{editingProduct ? "Edit Product" : "Add New Product"}</h4>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }} className="admin-form-grid">
+                      <div>
+                        <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 5, color: "rgba(255,255,255,.5)" }}>Product Name *</label>
+                        <input value={formData.name} onChange={e => setFormData(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Dragon Mode Endzone Tee" className="glass-input" style={{ width: "100%" }} />
+                      </div>
+                      <div>
+                        <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 5, color: "rgba(255,255,255,.5)" }}>Price ($) *</label>
+                        <input type="number" step="0.01" value={formData.price} onChange={e => setFormData(p => ({ ...p, price: e.target.value }))} className="glass-input" style={{ width: "100%" }} />
+                      </div>
+                      <div>
+                        <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 5, color: "rgba(255,255,255,.5)" }}>Category *</label>
+                        <select value={formData.cat} onChange={e => setFormData(p => ({ ...p, cat: e.target.value }))} className="currency-select" style={{ width: "100%", padding: "12px 14px", borderRadius: 12 }}>
+                          {CATEGORIES.map(c => <option key={c.slug} value={c.slug}>{c.name}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 5, color: "rgba(255,255,255,.5)" }}>Badge (optional)</label>
+                        <select value={formData.badge || ""} onChange={e => setFormData(p => ({ ...p, badge: e.target.value }))} className="currency-select" style={{ width: "100%", padding: "12px 14px", borderRadius: 12 }}>
+                          <option value="">None</option>
+                          <option value="New">New</option>
+                          <option value="Hot">Hot</option>
+                          <option value="Best Seller">Best Seller</option>
+                        </select>
+                      </div>
+                      <div style={{ gridColumn: "1/-1" }}>
+                        <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 5, color: "rgba(255,255,255,.5)" }}>Description</label>
+                        <textarea value={formData.desc} onChange={e => setFormData(p => ({ ...p, desc: e.target.value }))} placeholder="Describe the product..." className="glass-input" rows={3} style={{ width: "100%", resize: "vertical" }} />
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
+                      <button className="btn-primary" style={{ padding: "10px 28px", fontSize: 13 }} onClick={handleSaveProduct}>{editingProduct ? "Save Changes" : "Add Product"}</button>
+                      <button className="btn-secondary" style={{ padding: "10px 28px", fontSize: 13 }} onClick={() => { setShowAddForm(false); setEditingProduct(null); }}>Cancel</button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Products table */}
+                <div className="glass-card" style={{ padding: 0, borderRadius: 16, overflow: "hidden" }}>
+                  <div style={{ overflowX: "auto" }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                      <thead>
+                        <tr style={{ borderBottom: "1px solid rgba(255,255,255,.06)" }}>
+                          {["Image", "Name", "Category", "Price", "Badge", "Actions"].map(h => (
+                            <th key={h} style={{ textAlign: "left", padding: "12px 14px", color: "rgba(255,255,255,.4)", fontWeight: 600, fontSize: 12 }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {products.map(p => (
+                          <tr key={p.id} style={{ borderBottom: "1px solid rgba(255,255,255,.03)" }}>
+                            <td style={{ padding: "10px 14px" }}>
+                              <div style={{ width: 44, height: 44, borderRadius: 8, background: "rgba(255,255,255,.04)", border: "1px dashed rgba(255,255,255,.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 8, color: "rgba(255,255,255,.2)" }}>IMG</div>
+                            </td>
+                            <td style={{ padding: "10px 14px", fontWeight: 600 }}>{p.name}</td>
+                            <td style={{ padding: "10px 14px", textTransform: "capitalize" }}>{p.cat}</td>
+                            <td style={{ padding: "10px 14px", fontWeight: 700, color: "#00b4ff" }}>${p.price.toFixed(2)}</td>
+                            <td style={{ padding: "10px 14px" }}>{p.badge ? <span style={{ padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 700, background: p.badge === "Best Seller" ? "rgba(0,180,255,.15)" : p.badge === "Hot" ? "rgba(255,60,60,.15)" : "rgba(123,47,247,.15)", color: p.badge === "Best Seller" ? "#00b4ff" : p.badge === "Hot" ? "#ff4444" : "#7b2ff7" }}>{p.badge}</span> : <span style={{ color: "rgba(255,255,255,.2)" }}>—</span>}</td>
+                            <td style={{ padding: "10px 14px" }}>
+                              <div style={{ display: "flex", gap: 6 }}>
+                                <button onClick={() => { setEditingProduct(p); setFormData({ name: p.name, price: p.price, cat: p.cat, badge: p.badge || "", desc: p.desc || "" }); setShowAddForm(true); }} style={{ padding: "6px 12px", borderRadius: 8, background: "rgba(0,180,255,.1)", border: "1px solid rgba(0,180,255,.2)", color: "#00b4ff", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Edit</button>
+                                <button onClick={() => handleDeleteProduct(p.id)} style={{ padding: "6px 12px", borderRadius: 8, background: "rgba(255,60,60,.1)", border: "1px solid rgba(255,60,60,.2)", color: "#ff6666", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Delete</button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── ORDERS TAB ──────────────────────────────────────────── */}
+            {tab === "orders" && (
+              <div>
+                <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Orders ({orders.length})</h3>
+                <div className="glass-card" style={{ padding: 0, borderRadius: 16, overflow: "hidden" }}>
+                  <div style={{ overflowX: "auto" }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                      <thead>
+                        <tr style={{ borderBottom: "1px solid rgba(255,255,255,.06)" }}>
+                          {["Order ID", "Customer", "Email", "Items", "Total", "Status", "Date", "Actions"].map(h => (
+                            <th key={h} style={{ textAlign: "left", padding: "12px 14px", color: "rgba(255,255,255,.4)", fontWeight: 600, fontSize: 12 }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {orders.map(o => (
+                          <tr key={o.id} style={{ borderBottom: "1px solid rgba(255,255,255,.03)" }}>
+                            <td style={{ padding: "12px 14px", fontWeight: 600 }}>{o.id}</td>
+                            <td style={{ padding: "12px 14px" }}>{o.customer}</td>
+                            <td style={{ padding: "12px 14px", color: "rgba(255,255,255,.4)" }}>{o.email}</td>
+                            <td style={{ padding: "12px 14px" }}>{o.items}</td>
+                            <td style={{ padding: "12px 14px", fontWeight: 700 }}>${o.total.toFixed(2)}</td>
+                            <td style={{ padding: "12px 14px" }}>
+                              <select value={o.status} onChange={e => updateOrderStatus(o.id, e.target.value)} className="currency-select" style={{ padding: "5px 8px", borderRadius: 8, color: statusColor(o.status), borderColor: `${statusColor(o.status)}40` }}>
+                                {["pending", "paid", "shipped", "delivered", "cancelled"].map(s => <option key={s} value={s}>{s}</option>)}
+                              </select>
+                            </td>
+                            <td style={{ padding: "12px 14px", color: "rgba(255,255,255,.4)" }}>{o.date}</td>
+                            <td style={{ padding: "12px 14px" }}>
+                              <button style={{ padding: "6px 12px", borderRadius: 8, background: "rgba(0,180,255,.1)", border: "1px solid rgba(0,180,255,.2)", color: "#00b4ff", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>View</button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── CUSTOMERS TAB ───────────────────────────────────────── */}
+            {tab === "customers" && (
+              <div>
+                <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Customers</h3>
+                <div className="glass-card" style={{ padding: 0, borderRadius: 16, overflow: "hidden" }}>
+                  <div style={{ overflowX: "auto" }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                      <thead>
+                        <tr style={{ borderBottom: "1px solid rgba(255,255,255,.06)" }}>
+                          {["Customer", "Email", "Orders", "Total Spent", "Joined", "Status"].map(h => (
+                            <th key={h} style={{ textAlign: "left", padding: "12px 14px", color: "rgba(255,255,255,.4)", fontWeight: 600, fontSize: 12 }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {[
+                          { name: "Marcus Thompson", email: "marcus@email.com", orders: 5, spent: 149.95, joined: "2026-07-15", active: true },
+                          { name: "Sarah Kim", email: "sarah@email.com", orders: 3, spent: 89.97, joined: "2026-08-02", active: true },
+                          { name: "DeAndre Wilson", email: "deandre@email.com", orders: 2, spent: 64.98, joined: "2026-08-20", active: true },
+                          { name: "Jessica Moore", email: "jessica@email.com", orders: 4, spent: 119.96, joined: "2026-06-10", active: true },
+                          { name: "Tyler Robinson", email: "tyler@email.com", orders: 1, spent: 32.99, joined: "2026-09-01", active: false },
+                        ].map((c, i) => (
+                          <tr key={i} style={{ borderBottom: "1px solid rgba(255,255,255,.03)" }}>
+                            <td style={{ padding: "12px 14px", fontWeight: 600 }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                                <div style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(0,180,255,.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#00b4ff" }}>{c.name.charAt(0)}</div>
+                                {c.name}
+                              </div>
+                            </td>
+                            <td style={{ padding: "12px 14px", color: "rgba(255,255,255,.4)" }}>{c.email}</td>
+                            <td style={{ padding: "12px 14px" }}>{c.orders}</td>
+                            <td style={{ padding: "12px 14px", fontWeight: 700, color: "#00cc66" }}>${c.spent.toFixed(2)}</td>
+                            <td style={{ padding: "12px 14px", color: "rgba(255,255,255,.4)" }}>{c.joined}</td>
+                            <td style={{ padding: "12px 14px" }}>
+                              <span style={{ padding: "4px 10px", borderRadius: 20, fontSize: 11, fontWeight: 700, background: c.active ? "rgba(0,204,102,.1)" : "rgba(255,255,255,.05)", color: c.active ? "#00cc66" : "rgba(255,255,255,.3)" }}>{c.active ? "Active" : "Inactive"}</span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── MESSAGES TAB ────────────────────────────────────────── */}
+            {tab === "messages" && (
+              <div>
+                <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Contact Messages ({messages.length})</h3>
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  {messages.map(m => (
+                    <div key={m.id} className="glass-card" style={{ padding: 20, borderRadius: 14, borderLeft: m.read ? "3px solid transparent" : "3px solid #00b4ff" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
+                        <div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                            <span style={{ fontWeight: 700, fontSize: 14 }}>{m.name}</span>
+                            {!m.read && <span style={{ padding: "2px 8px", borderRadius: 20, fontSize: 10, fontWeight: 700, background: "rgba(0,180,255,.15)", color: "#00b4ff" }}>New</span>}
+                          </div>
+                          <p style={{ fontSize: 12, color: "rgba(255,255,255,.35)" }}>{m.email} · {m.date}</p>
+                        </div>
+                        <div style={{ display: "flex", gap: 6 }}>
+                          {!m.read && <button onClick={() => markRead(m.id)} style={{ padding: "5px 10px", borderRadius: 6, background: "rgba(0,180,255,.1)", border: "1px solid rgba(0,180,255,.2)", color: "#00b4ff", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Mark Read</button>}
+                          <button onClick={() => deleteMessage(m.id)} style={{ padding: "5px 10px", borderRadius: 6, background: "rgba(255,60,60,.1)", border: "1px solid rgba(255,60,60,.2)", color: "#ff6666", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Delete</button>
+                        </div>
+                      </div>
+                      <p style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>{m.subject}</p>
+                      <p style={{ fontSize: 13, color: "rgba(255,255,255,.45)", lineHeight: 1.6 }}>{m.message}</p>
+                    </div>
+                  ))}
+                  {messages.length === 0 && <div style={{ textAlign: "center", padding: "60px 0", color: "rgba(255,255,255,.3)" }}><p style={{ fontSize: 36, marginBottom: 10 }}>✉️</p><p style={{ fontWeight: 600 }}>No messages</p></div>}
+                </div>
+              </div>
+            )}
+
+            {/* ── SETTINGS TAB ────────────────────────────────────────── */}
+            {tab === "settings" && (
+              <div>
+                <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Store Settings</h3>
+                <div className="glass-card" style={{ padding: 28, borderRadius: 16, marginBottom: 16 }}>
+                  <h4 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16 }}>General</h4>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }} className="admin-form-grid">
+                    <div>
+                      <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 5, color: "rgba(255,255,255,.5)" }}>Store Name</label>
+                      <input defaultValue="Sportsvestis" className="glass-input" style={{ width: "100%" }} />
+                    </div>
+                    <div>
+                      <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 5, color: "rgba(255,255,255,.5)" }}>Contact Email</label>
+                      <input defaultValue="support@sportsvestis.com" className="glass-input" style={{ width: "100%" }} />
+                    </div>
+                    <div>
+                      <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 5, color: "rgba(255,255,255,.5)" }}>Free Shipping Threshold ($)</label>
+                      <input type="number" defaultValue="75" className="glass-input" style={{ width: "100%" }} />
+                    </div>
+                    <div>
+                      <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 5, color: "rgba(255,255,255,.5)" }}>Default Currency</label>
+                      <select defaultValue="USD" className="currency-select" style={{ width: "100%", padding: "12px 14px", borderRadius: 12 }}>
+                        <option value="USD">USD ($)</option><option value="EUR">EUR (€)</option><option value="GBP">GBP (£)</option>
+                      </select>
+                    </div>
+                  </div>
+                  <button className="btn-primary" style={{ marginTop: 20, padding: "10px 28px", fontSize: 13 }}>Save Changes</button>
+                </div>
+
+                <div className="glass-card" style={{ padding: 28, borderRadius: 16 }}>
+                  <h4 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16 }}>Change Admin Password</h4>
+                  <div style={{ maxWidth: 400 }}>
+                    <div style={{ marginBottom: 14 }}>
+                      <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 5, color: "rgba(255,255,255,.5)" }}>Current Password</label>
+                      <input type="password" className="glass-input" style={{ width: "100%" }} />
+                    </div>
+                    <div style={{ marginBottom: 14 }}>
+                      <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 5, color: "rgba(255,255,255,.5)" }}>New Password</label>
+                      <input type="password" className="glass-input" style={{ width: "100%" }} />
+                    </div>
+                    <div style={{ marginBottom: 20 }}>
+                      <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 5, color: "rgba(255,255,255,.5)" }}>Confirm New Password</label>
+                      <input type="password" className="glass-input" style={{ width: "100%" }} />
+                    </div>
+                    <button className="btn-primary" style={{ padding: "10px 28px", fontSize: 13 }}>Update Password</button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <style>{`
+        @media(max-width:900px){
+          .admin-layout{flex-direction:column!important}
+          .admin-sidebar{width:100%!important}
+          .admin-sidebar .glass-card{display:flex!important;flex-wrap:wrap!important;gap:4px!important}
+          .admin-sidebar button{width:auto!important;flex:1 1 auto!important;min-width:100px!important}
+          .admin-stats{grid-template-columns:repeat(2,1fr)!important}
+          .admin-form-grid{grid-template-columns:1fr!important}
+        }
+        @media(max-width:480px){
+          .admin-stats{grid-template-columns:1fr!important}
+        }
+      `}</style>
+    </section>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    MAIN APP — ROUTING & LAYOUT
    ═══════════════════════════════════════════════════════════════════════════ */
 export default function App() {
@@ -1238,11 +1714,14 @@ export default function App() {
       `}</style>
 
       {/* ═══ Announcement Bar ═══ */}
+      {page !== "admin" && (
       <div className="announcement-bar" style={{ padding: "9px 16px", textAlign: "center", fontSize: 13, fontWeight: 600, color: "#fff", position: "relative", zIndex: 100 }}>
         <span className="announcement-bar-text">🏈 FREE SHIPPING on orders over $75 &nbsp;·&nbsp; 30-Day Money-Back Guarantee</span>
       </div>
+      )}
 
       {/* ═══ Navigation ═══ */}
+      {page !== "admin" && (
       <nav className="glass-nav" style={{ position: "sticky", top: 0, zIndex: 100, padding: "0 24px" }}>
         <div className="nav-bar-inner" style={{ maxWidth: 1280, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", height: 64 }}>
           <button className="mobile-toggle" onClick={() => setMenuOpen(true)} style={{ display: "flex", alignItems: "center" }}><Icon.Menu /></button>
@@ -1285,6 +1764,7 @@ export default function App() {
           </div>
         </div>
       </nav>
+      )}
 
       {/* ═══ Page Content ═══ */}
       {page === "home" && <HomePage nav={nav} addToCart={addToCart} cur={currency} sym={sym} conv={conv} />}
@@ -1293,8 +1773,10 @@ export default function App() {
       {page === "about" && <AboutPage nav={nav} />}
       {page === "contact" && <ContactPage nav={nav} />}
       {page === "login" && <LoginPage nav={nav} />}
+      {page === "admin" && <AdminDashboard nav={nav} />}
 
       {/* ═══ Footer — full width edge-to-edge ═══ */}
+      {page !== "admin" && (
       <footer className="site-footer" style={{ borderTop: "1px solid rgba(255,255,255,.06)", background: "rgba(255,255,255,.01)", width: "100%", marginTop: 40 }}>
         <div style={{ padding: "44px 24px 0", maxWidth: 1280, margin: "0 auto" }}>
           {/* Brand row */}
@@ -1339,6 +1821,7 @@ export default function App() {
           </div>
         </div>
       </footer>
+      )}
 
       {/* ═══ Cart Drawer ═══ */}
       <div className={`overlay ${cartOpen ? "open" : ""}`} onClick={() => setCartOpen(false)} />
