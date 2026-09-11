@@ -1109,11 +1109,13 @@ function AdminDashboard({ nav }) {
     { id: 3, name: "Jordan Smith", email: "jordan@email.com", subject: "Wholesale inquiry", message: "I run a sports shop and would love to carry your tees. Do you offer wholesale pricing?", date: "2026-09-08", read: false },
   ]);
 
-  // Admin login — tries the real backend API, falls back to demo mode
+  // Admin login — authenticates against the real backend only.
+  // No hardcoded credential bypass: if the API is unreachable or the
+  // credentials are wrong, login fails. This is intentional — a client-side
+  // fallback password is a public authentication bypass once code ships.
   const handleAdminLogin = async () => {
     setAdminError("");
     setAdminLoading(true);
-    // Try real backend first
     try {
       const resp = await fetch("/api/auth/login", {
         method: "POST",
@@ -1122,24 +1124,16 @@ function AdminDashboard({ nav }) {
         body: JSON.stringify({ email: adminEmail, password: adminPw }),
       });
       const data = await resp.json();
+
       if (resp.ok && data.user?.role === "admin") {
-        setAdminAuth(true); setAdminLoading(false);
-        return;
-      }
-      if (resp.ok && data.user?.role !== "admin") {
+        setAdminAuth(true);
+      } else if (resp.ok && data.user?.role !== "admin") {
         setAdminError("This account does not have admin access.");
-        setAdminLoading(false);
-        return;
+      } else {
+        setAdminError(data.error || "Invalid email or password.");
       }
     } catch (e) {
-      // Backend not running — fall through to demo mode
-    }
-    // Demo fallback when backend is offline
-    await new Promise(r => setTimeout(r, 800));
-    if (adminEmail === "admin@sportsvestis.com" && adminPw === "Admin123!") {
-      setAdminAuth(true);
-    } else {
-      setAdminError("Invalid credentials. If backend is offline, use demo: admin@sportsvestis.com / Admin123!");
+      setAdminError("Can't reach the server. Check that the backend is running and try again.");
     }
     setAdminLoading(false);
   };
