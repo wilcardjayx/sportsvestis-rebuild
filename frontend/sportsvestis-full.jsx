@@ -1107,14 +1107,34 @@ function AdminDashboard({ nav }) {
     { id: 3, name: "Jordan Smith", email: "jordan@email.com", subject: "Wholesale inquiry", message: "I run a sports shop and would love to carry your tees. Do you offer wholesale pricing?", date: "2026-09-08", read: false },
   ]);
 
-  // Admin login
-  const handleAdminLogin = () => {
-    // Demo credentials — in production this hits the backend /api/auth/login
+  // Admin login — tries the real backend API, falls back to demo mode
+  const handleAdminLogin = async () => {
+    setAdminError("");
+    // Try real backend first
+    try {
+      const resp = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ email: adminEmail, password: adminPw }),
+      });
+      const data = await resp.json();
+      if (resp.ok && data.user?.role === "admin") {
+        setAdminAuth(true);
+        return;
+      }
+      if (resp.ok && data.user?.role !== "admin") {
+        setAdminError("This account does not have admin access.");
+        return;
+      }
+    } catch (e) {
+      // Backend not running — fall through to demo mode
+    }
+    // Demo fallback when backend is offline
     if (adminEmail === "admin@sportsvestis.com" && adminPw === "Admin123!") {
       setAdminAuth(true);
-      setAdminError("");
     } else {
-      setAdminError("Invalid credentials. Demo: admin@sportsvestis.com / Admin123!");
+      setAdminError("Invalid credentials. If backend is offline, use demo: admin@sportsvestis.com / Admin123!");
     }
   };
 
