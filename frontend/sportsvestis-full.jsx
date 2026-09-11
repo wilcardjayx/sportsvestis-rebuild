@@ -1090,6 +1090,8 @@ function AdminDashboard({ nav }) {
   const [adminEmail, setAdminEmail] = useState("");
   const [adminPw, setAdminPw] = useState("");
   const [adminError, setAdminError] = useState("");
+  const [showAdminPw, setShowAdminPw] = useState(false);
+  const [adminLoading, setAdminLoading] = useState(false);
   const [tab, setTab] = useState("dashboard");
   const [products, setProducts] = useState([...PRODUCTS]);
   const [editingProduct, setEditingProduct] = useState(null);
@@ -1110,6 +1112,7 @@ function AdminDashboard({ nav }) {
   // Admin login — tries the real backend API, falls back to demo mode
   const handleAdminLogin = async () => {
     setAdminError("");
+    setAdminLoading(true);
     // Try real backend first
     try {
       const resp = await fetch("/api/auth/login", {
@@ -1120,22 +1123,25 @@ function AdminDashboard({ nav }) {
       });
       const data = await resp.json();
       if (resp.ok && data.user?.role === "admin") {
-        setAdminAuth(true);
+        setAdminAuth(true); setAdminLoading(false);
         return;
       }
       if (resp.ok && data.user?.role !== "admin") {
         setAdminError("This account does not have admin access.");
+        setAdminLoading(false);
         return;
       }
     } catch (e) {
       // Backend not running — fall through to demo mode
     }
     // Demo fallback when backend is offline
+    await new Promise(r => setTimeout(r, 800));
     if (adminEmail === "admin@sportsvestis.com" && adminPw === "Admin123!") {
       setAdminAuth(true);
     } else {
       setAdminError("Invalid credentials. If backend is offline, use demo: admin@sportsvestis.com / Admin123!");
     }
+    setAdminLoading(false);
   };
 
   // Product form state
@@ -1182,32 +1188,164 @@ function AdminDashboard({ nav }) {
     return map[s] || "#888";
   };
 
-  // ── Admin Login Screen ─────────────────────────────────────────────────
+  // ── Admin Login Screen — Liquid Glass ────────────────────────────────────
   if (!adminAuth) {
     return (
-      <section style={{ minHeight: "80vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 24px" }}>
-        <div style={{ width: "100%", maxWidth: 400 }}>
-          <button onClick={() => nav("home")} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, color: "rgba(255,255,255,.4)", marginBottom: 32, cursor: "pointer", background: "none", border: "none", fontFamily: "inherit" }}>
+      <section style={{ position: "relative", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+        {/* WebGL liquid glass background */}
+        <LiquidGlassCanvas />
+        <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at center, rgba(6,6,8,.3) 0%, rgba(6,6,8,.7) 70%)" }} />
+
+        <div style={{ position: "relative", zIndex: 10, width: "100%", maxWidth: 420, padding: "0 20px" }}>
+
+          {/* Back to store */}
+          <button onClick={() => nav("home")} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, color: "rgba(255,255,255,.5)", marginBottom: 28, cursor: "pointer", background: "none", border: "none", fontFamily: "inherit", transition: "color .2s" }}
+            onMouseEnter={e => e.currentTarget.style.color = "#fff"}
+            onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,.5)"}>
             <Icon.ArrowLeft /> Back to store
           </button>
-          <div className="glass-card" style={{ padding: "36px 32px", borderRadius: 24 }}>
-            <div style={{ textAlign: "center", marginBottom: 28 }}>
-              <div style={{ width: 48, height: 48, borderRadius: 14, background: "linear-gradient(135deg,#ff6b00,#ff3b30)", display: "inline-flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 18, marginBottom: 16 }}>⚙</div>
-              <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 6 }}>Admin Panel</h2>
-              <p style={{ fontSize: 13, color: "rgba(255,255,255,.4)" }}>Sign in to manage your store</p>
+
+          {/* Glass login card */}
+          <div style={{
+            backdropFilter: "blur(40px) saturate(200%)", WebkitBackdropFilter: "blur(40px) saturate(200%)",
+            background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.08)",
+            borderRadius: 28, padding: "40px 32px", position: "relative", overflow: "hidden",
+          }}>
+            {/* Decorative glow orbs */}
+            <div style={{ position: "absolute", top: -60, right: -60, width: 160, height: 160, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,107,0,.15) 0%, transparent 70%)", pointerEvents: "none" }} />
+            <div style={{ position: "absolute", bottom: -40, left: -40, width: 120, height: 120, borderRadius: "50%", background: "radial-gradient(circle, rgba(0,180,255,.1) 0%, transparent 70%)", pointerEvents: "none" }} />
+
+            {/* Logo + heading */}
+            <div style={{ textAlign: "center", marginBottom: 32, position: "relative" }}>
+              <div style={{
+                width: 64, height: 64, borderRadius: 20, margin: "0 auto 18px",
+                background: "linear-gradient(135deg, #ff6b00 0%, #ff3b30 50%, #cc0000 100%)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                boxShadow: "0 8px 32px rgba(255,60,0,.3), inset 0 1px 0 rgba(255,255,255,.2)",
+                position: "relative",
+              }}>
+                <span style={{ fontSize: 28, filter: "drop-shadow(0 2px 4px rgba(0,0,0,.3))" }}>⚡</span>
+                {/* Pulse ring */}
+                <div style={{
+                  position: "absolute", inset: -4, borderRadius: 24,
+                  border: "2px solid rgba(255,107,0,.3)",
+                  animation: "adminPulse 2s ease-in-out infinite",
+                }} />
+              </div>
+              <h2 style={{
+                fontSize: 26, fontWeight: 900, letterSpacing: "-.03em", marginBottom: 6,
+                background: "linear-gradient(135deg, #fff 0%, rgba(255,255,255,.7) 100%)",
+                WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
+              }}>Command Center</h2>
+              <p style={{ fontSize: 14, color: "rgba(255,255,255,.35)", letterSpacing: ".02em" }}>Store administration portal</p>
             </div>
-            {adminError && <div style={{ padding: "10px 14px", borderRadius: 10, background: "rgba(255,60,60,.1)", border: "1px solid rgba(255,60,60,.2)", marginBottom: 16, fontSize: 12, color: "#ff6666" }}>{adminError}</div>}
-            <div style={{ marginBottom: 14 }}>
-              <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 6, color: "rgba(255,255,255,.6)" }}>Admin Email</label>
-              <input value={adminEmail} onChange={e => setAdminEmail(e.target.value)} placeholder="admin@sportsvestis.com" className="glass-input" style={{ width: "100%" }} />
+
+            {/* Error message */}
+            {adminError && (
+              <div style={{
+                padding: "12px 16px", borderRadius: 14, marginBottom: 20,
+                background: "rgba(255,60,60,.08)", border: "1px solid rgba(255,60,60,.15)",
+                backdropFilter: "blur(10px)",
+                display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: "#ff7777",
+              }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <span style={{ flex: 1, lineHeight: 1.4 }}>{adminError}</span>
+              </div>
+            )}
+
+            {/* Email field */}
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 7, color: "rgba(255,255,255,.5)", letterSpacing: ".04em" }}>EMAIL ADDRESS</label>
+              <div style={{ position: "relative" }}>
+                <div style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,.25)" }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22 6 12 13 2 6"/></svg>
+                </div>
+                <input value={adminEmail} onChange={e => setAdminEmail(e.target.value)}
+                  placeholder="admin@sportsvestis.com" autoComplete="email"
+                  style={{
+                    width: "100%", padding: "14px 16px 14px 42px", borderRadius: 14, fontSize: 14,
+                    background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.08)",
+                    color: "#fff", outline: "none", transition: "all .3s", fontFamily: "inherit",
+                  }}
+                  onFocus={e => { e.target.style.borderColor = "rgba(255,107,0,.4)"; e.target.style.boxShadow = "0 0 0 3px rgba(255,107,0,.08)"; }}
+                  onBlur={e => { e.target.style.borderColor = "rgba(255,255,255,.08)"; e.target.style.boxShadow = "none"; }}
+                />
+              </div>
             </div>
+
+            {/* Password field */}
             <div style={{ marginBottom: 24 }}>
-              <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 6, color: "rgba(255,255,255,.6)" }}>Password</label>
-              <input type="password" value={adminPw} onChange={e => setAdminPw(e.target.value)} placeholder="Enter admin password" className="glass-input" style={{ width: "100%" }} onKeyDown={e => e.key === "Enter" && handleAdminLogin()} />
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 7, color: "rgba(255,255,255,.5)", letterSpacing: ".04em" }}>PASSWORD</label>
+              <div style={{ position: "relative" }}>
+                <div style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,.25)" }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                </div>
+                <input type={showAdminPw ? "text" : "password"} value={adminPw} onChange={e => setAdminPw(e.target.value)}
+                  placeholder="Enter your password" autoComplete="current-password"
+                  onKeyDown={e => e.key === "Enter" && handleAdminLogin()}
+                  style={{
+                    width: "100%", padding: "14px 48px 14px 42px", borderRadius: 14, fontSize: 14,
+                    background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.08)",
+                    color: "#fff", outline: "none", transition: "all .3s", fontFamily: "inherit",
+                  }}
+                  onFocus={e => { e.target.style.borderColor = "rgba(255,107,0,.4)"; e.target.style.boxShadow = "0 0 0 3px rgba(255,107,0,.08)"; }}
+                  onBlur={e => { e.target.style.borderColor = "rgba(255,255,255,.08)"; e.target.style.boxShadow = "none"; }}
+                />
+                <button onClick={() => setShowAdminPw(!showAdminPw)} type="button" style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,.3)", cursor: "pointer", background: "none", border: "none", padding: 4 }}>
+                  {showAdminPw ? (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                  ) : (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  )}
+                </button>
+              </div>
             </div>
-            <button className="btn-primary" style={{ width: "100%", textAlign: "center" }} onClick={handleAdminLogin}>Sign In to Dashboard</button>
+
+            {/* Sign in button */}
+            <button onClick={handleAdminLogin} disabled={adminLoading} style={{
+              width: "100%", padding: "15px", borderRadius: 14, fontSize: 15, fontWeight: 700,
+              background: "linear-gradient(135deg, #ff6b00 0%, #ff3b30 100%)",
+              color: "#fff", cursor: adminLoading ? "wait" : "pointer", border: "none", fontFamily: "inherit",
+              boxShadow: "0 4px 20px rgba(255,60,0,.25), inset 0 1px 0 rgba(255,255,255,.15)",
+              transition: "all .3s", position: "relative", overflow: "hidden",
+              opacity: adminLoading ? .7 : 1,
+              textAlign: "center",
+            }}
+              onMouseEnter={e => { if (!adminLoading) { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 32px rgba(255,60,0,.35), inset 0 1px 0 rgba(255,255,255,.15)"; }}}
+              onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 4px 20px rgba(255,60,0,.25), inset 0 1px 0 rgba(255,255,255,.15)"; }}>
+              {adminLoading ? (
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
+                  <span className="login-spinner" style={{ borderColor: "rgba(255,255,255,.3)", borderTopColor: "#fff" }} />
+                  Authenticating...
+                </span>
+              ) : "Access Dashboard"}
+            </button>
+
+            {/* Security badges */}
+            <div style={{ display: "flex", justifyContent: "center", gap: 16, marginTop: 24, paddingTop: 20, borderTop: "1px solid rgba(255,255,255,.05)" }}>
+              {[
+                { icon: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>, t: "SSL Secured" },
+                { icon: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>, t: "Encrypted" },
+                { icon: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>, t: "Admin Only" },
+              ].map((s, i) => (
+                <span key={i} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "rgba(255,255,255,.2)" }}>{s.icon} {s.t}</span>
+              ))}
+            </div>
           </div>
+
+          {/* Bottom text */}
+          <p style={{ textAlign: "center", marginTop: 20, fontSize: 12, color: "rgba(255,255,255,.2)" }}>
+            Sportsvestis Administration · Authorized personnel only
+          </p>
         </div>
+
+        {/* Pulse animation */}
+        <style>{`
+          @keyframes adminPulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: .4; transform: scale(1.15); }
+          }
+        `}</style>
       </section>
     );
   }
