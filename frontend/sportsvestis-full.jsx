@@ -151,25 +151,25 @@ const COLORS = [
 
 const PRODUCTS = [
   { id: 1, name: "Dragon Mode Endzone Tee", price: 29.99, cat: "football", badge: "Best Seller", desc: "Unleash your inner beast on game day with this fire-breathing dragon graphic. Premium cotton blend, pre-shrunk, tagless comfort." },
-  { id: 2, name: "Football Forever Vintage Tee", price: 29.99, cat: "football", badge: null, desc: "Road to the end zone — a vintage-inspired graphic for the lifelong football fan. Soft hand feel with distressed ink print." },
+  { id: 2, name: "Football Forever Vintage Tee", price: 29.99, cat: "football", badge: null, desc: "Road to the end zone: a vintage-inspired graphic for the lifelong football fan. Soft hand feel with distressed ink print." },
   { id: 3, name: "Touchdown Devil Game Day Tee", price: 29.99, cat: "football", badge: "Hot", desc: "Hellish season energy in a bold graphic tee. Made from ringspun cotton with a relaxed fit that moves with you." },
   { id: 4, name: "Field General Eagle Tee", price: 29.99, cat: "football", badge: null, desc: "Channel your inner quarterback with this retro eagle graphic. Classic crew neck, double-stitched for durability." },
   { id: 5, name: "Game Face Retro Helmet Tee", price: 29.99, cat: "football", badge: null, desc: "Retro helmet player graphic for the old-school football enthusiast. Heavyweight cotton, true to size." },
-  { id: 6, name: "Iron Valley Rams Tee", price: 29.99, cat: "football", badge: "New", desc: "Hit Hard Stay Humble — the mantra of champions. Soft jersey cotton with a modern slim fit." },
+  { id: 6, name: "Iron Valley Rams Tee", price: 29.99, cat: "football", badge: "New", desc: "Hit Hard Stay Humble. The mantra of champions. Soft jersey cotton with a modern slim fit." },
   { id: 7, name: "Play Loud Dream Big Tee", price: 29.99, cat: "football", badge: null, desc: "Riverside team vintage graphic for dreamers and doers. Garment-dyed for a lived-in feel from day one." },
-  { id: 8, name: "Eastside Yard Dogs Tee", price: 29.99, cat: "football", badge: null, desc: "No Easy Plays — vintage gridiron attitude. Enzyme-washed cotton with a broken-in softness." },
+  { id: 8, name: "Eastside Yard Dogs Tee", price: 29.99, cat: "football", badge: null, desc: "No Easy Plays. Vintage gridiron attitude. Enzyme-washed cotton with a broken-in softness." },
   { id: 9, name: "Striker's Flame Soccer Tee", price: 29.99, cat: "soccer", badge: "New", desc: "Blaze past defenders with this bold striker graphic. Lightweight performance cotton blend." },
   { id: 10, name: "Golden Boot Legends Tee", price: 29.99, cat: "soccer", badge: null, desc: "For the one chasing the golden boot. Vintage wash with a super-soft drape." },
   { id: 11, name: "Slam Dunk Thunder Tee", price: 34.99, cat: "basketball", badge: "Hot", desc: "Rise above the rim with explosive thunder energy. Premium heavyweight cotton." },
-  { id: 12, name: "Court Vision Retro Tee", price: 34.99, cat: "basketball", badge: null, desc: "See the whole court — a retro basketball graphic that channels 90s energy." },
+  { id: 12, name: "Court Vision Retro Tee", price: 34.99, cat: "basketball", badge: null, desc: "See the whole court: a retro basketball graphic that channels 90s energy." },
   { id: 13, name: "Grand Slam Vintage Tee", price: 29.99, cat: "baseball", badge: null, desc: "A grand slam graphic with vintage Americana flair. Tubular construction, no side seams." },
   { id: 14, name: "Diamond Kings Tee", price: 29.99, cat: "baseball", badge: "New", desc: "Rule the diamond with royal energy. Combed cotton, silky smooth print." },
   { id: 15, name: "Kickflip Culture Tee", price: 32.99, cat: "skateboard", badge: null, desc: "Skate culture meets street art. Oversized fit, dropped shoulders, heavy cotton." },
-  { id: 16, name: "Grind State Tee", price: 32.99, cat: "skateboard", badge: "Hot", desc: "Always grinding — a tribute to the skatepark lifestyle. Relaxed box fit." },
+  { id: 16, name: "Grind State Tee", price: 32.99, cat: "skateboard", badge: "Hot", desc: "Always grinding. A tribute to the skatepark lifestyle. Relaxed box fit." },
 ];
 
 const REVIEWS = [
-  { name: "Marcus T.", rating: 5, text: "Best fitting graphic tee I've ever owned. The print quality is insane — held up through 20+ washes.", date: "Aug 2026" },
+  { name: "Marcus T.", rating: 5, text: "Best fitting graphic tee I've ever owned. The print quality is insane, held up through 20+ washes.", date: "Aug 2026" },
   { name: "Sarah K.", rating: 5, text: "Bought the Dragon Mode for my husband and he won't stop wearing it. Ordering more for the whole family.", date: "Jul 2026" },
   { name: "DeAndre W.", rating: 4, text: "Super comfortable cotton and the designs are fire. Only wish there were more color options.", date: "Jul 2026" },
   { name: "Jessica M.", rating: 5, text: "Shipped fast, arrived in perfect condition. The vintage feel of these shirts is spot on.", date: "Jun 2026" },
@@ -293,7 +293,7 @@ function HomePage({ nav, addToCart, cur, sym, conv }) {
                 <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: ".1em", color: "#00b4ff", marginBottom: 12 }}>Featured Collection</p>
                 <h2 style={{ fontSize: "clamp(28px,4vw,44px)", fontWeight: 800, letterSpacing: "-.02em", lineHeight: 1.1, marginBottom: 16 }}>Game Day<br />Essentials</h2>
                 <p style={{ fontSize: 15, color: "rgba(255,255,255,.45)", lineHeight: 1.7, marginBottom: 32, maxWidth: 380 }}>
-                  From tailgates to touchdowns — gear up with tees that hit different. Premium fabrics, bold graphics, all-day comfort.
+                  From tailgates to touchdowns. Gear up with tees that hit different. Premium fabrics, bold graphics, all-day comfort.
                 </p>
                 <button className="btn-primary" onClick={() => nav("shop")} style={{ alignSelf: "flex-start" }}>Shop Collection</button>
               </div>
@@ -333,7 +333,7 @@ function HomePage({ nav, addToCart, cur, sym, conv }) {
           <SectionHeader tag="Got questions?" title="Frequently Asked" />
           {[
             { q: "Where are you located?", a: "We're a proud US-based company with production facilities in Florida and Texas. We also ship worldwide through trusted international partners." },
-            { q: "Do you ship internationally?", a: "Yes — worldwide shipping is available. Costs depend on location. Orders over $75 within the US ship free." },
+            { q: "Do you ship internationally?", a: "Yes, worldwide shipping is available. Costs depend on location. Orders over $75 within the US ship free." },
             { q: "Will I get a tracking number?", a: "Absolutely. You'll receive a tracking email the moment your order ships so you can follow its journey to your door." },
             { q: "What materials do you use?", a: "Every tee is crafted from high-quality, soft, durable fabrics that hold up wash after wash. Check individual product pages for specific material details." },
           ].map((f, i) => <FAQItem key={i} q={f.q} a={f.a} />)}
@@ -365,7 +365,7 @@ function ProductCard({ p, nav, addToCart, sym, conv }) {
         <ImgPlaceholder label={p.name} rounded={14} />
         <div className="quick-add" style={{ position: "absolute", bottom: 10, left: 10, right: 10 }}>
           <button onClick={e => { e.stopPropagation(); addToCart(p); }} style={{ width: "100%", padding: 10, borderRadius: 12, background: "rgba(0,180,255,.9)", backdropFilter: "blur(10px)", color: "#fff", fontWeight: 600, fontSize: 12, letterSpacing: ".3px", cursor: "pointer", border: "none", fontFamily: "inherit" }}>
-            Quick Add — {sym}{conv(p.price)}
+            Quick Add: {sym}{conv(p.price)}
           </button>
         </div>
       </div>
@@ -496,7 +496,7 @@ function ProductPage({ nav, addToCart, sym, conv, productId }) {
         <div className="pdp-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 48, marginBottom: 60 }}>
           {/* Images */}
           <div>
-            <ImgPlaceholder label={`${p.name} — Main Image`} aspect="4/5" rounded={20} style={{ marginBottom: 12 }} />
+            <ImgPlaceholder label={`${p.name}: Main Image`} aspect="4/5" rounded={20} style={{ marginBottom: 12 }} />
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10 }}>
               {[1, 2, 3, 4].map(n => <ImgPlaceholder key={n} label={`View ${n}`} aspect="1/1" rounded={12} />)}
             </div>
@@ -517,7 +517,7 @@ function ProductPage({ nav, addToCart, sym, conv, productId }) {
 
             {/* Color */}
             <div style={{ marginBottom: 24 }}>
-              <p style={{ fontSize: 13, fontWeight: 700, marginBottom: 10 }}>Color — {color}</p>
+              <p style={{ fontSize: 13, fontWeight: 700, marginBottom: 10 }}>Color: {color}</p>
               <div style={{ display: "flex", gap: 10 }}>
                 {COLORS.map(c => (
                   <button key={c.name} onClick={() => setColor(c.name)} style={{ width: 36, height: 36, borderRadius: "50%", background: c.hex, border: color === c.name ? "2px solid #00b4ff" : "2px solid rgba(255,255,255,.12)", cursor: "pointer", outline: color === c.name ? "2px solid rgba(0,180,255,.3)" : "none", outlineOffset: 2 }} />
@@ -548,7 +548,7 @@ function ProductPage({ nav, addToCart, sym, conv, productId }) {
             {/* Add to Cart */}
             <div style={{ display: "flex", gap: 12 }}>
               <button className="btn-primary" style={{ flex: 1, textAlign: "center" }} onClick={() => { for (let i = 0; i < qty; i++) addToCart(p); }}>
-                Add to Cart — {sym}{conv(p.price * qty)}
+                Add to Cart: {sym}{conv(p.price * qty)}
               </button>
             </div>
 
@@ -572,7 +572,7 @@ function ProductPage({ nav, addToCart, sym, conv, productId }) {
             {tab === "desc" && (
               <div style={{ maxWidth: 640 }}>
                 <p style={{ fontSize: 14, color: "rgba(255,255,255,.55)", lineHeight: 1.8, marginBottom: 20 }}>{p.desc}</p>
-                <p style={{ fontSize: 14, color: "rgba(255,255,255,.55)", lineHeight: 1.8 }}>Made from 100% premium ringspun cotton. Pre-shrunk for a consistent fit. Tagless neck label for itch-free comfort. Double-needle stitched hems for extra durability. Machine washable — tumble dry low.</p>
+                <p style={{ fontSize: 14, color: "rgba(255,255,255,.55)", lineHeight: 1.8 }}>Made from 100% premium ringspun cotton. Pre-shrunk for a consistent fit. Tagless neck label for itch-free comfort. Double-needle stitched hems for extra durability. Machine washable, tumble dry low.</p>
               </div>
             )}
             {tab === "reviews" && (
@@ -591,7 +591,7 @@ function ProductPage({ nav, addToCart, sym, conv, productId }) {
               <div style={{ maxWidth: 640, fontSize: 14, color: "rgba(255,255,255,.55)", lineHeight: 1.8 }}>
                 <p style={{ marginBottom: 16 }}>Free standard shipping on all US orders over $75. Orders under $75 ship for a flat $4.99. International shipping rates calculated at checkout.</p>
                 <p style={{ marginBottom: 16 }}>Orders are processed within 1–2 business days. Standard US delivery takes 5–7 business days. Express options are available at checkout.</p>
-                <p>Not happy? No worries. We offer hassle-free returns within 30 days of delivery. Free size exchanges — just reach out to our support team.</p>
+                <p>Not happy? No worries. We offer hassle-free returns within 30 days of delivery. Free size exchanges. Just reach out to our support team.</p>
               </div>
             )}
           </div>
@@ -625,7 +625,7 @@ function AboutPage({ nav }) {
           Built by fans,<br />for fans.
         </h1>
 
-        <P>Sportsvestis started with one idea — your game-day gear should be as bold as the plays you cheer for. We're a US-based brand making graphic tees for people who live and breathe sports, from Friday night football to Sunday pickup basketball to the skatepark after school.</P>
+        <P>Sportsvestis started with one idea: your game-day gear should be as bold as the plays you cheer for. We're a US-based brand making graphic tees for people who live and breathe sports, from Friday night football to Sunday pickup basketball to the skatepark after school.</P>
 
         <ImgPlaceholder label="Brand Story Image" aspect="2.4/1" rounded={16} style={{ margin: "36px 0" }} />
 
@@ -640,7 +640,7 @@ function AboutPage({ nav }) {
           ))}
         </div>
 
-        <P>We cover football, soccer, basketball, baseball, and skateboarding — five communities, one shop. Our customers are fans who want to rep their sport without settling for generic merch. Bold graphics, real comfort, fair prices.</P>
+        <P>We cover football, soccer, basketball, baseball, and skateboarding. Five communities, one shop. Our customers are fans who want to rep their sport without settling for generic merch. Bold graphics, real comfort, fair prices.</P>
 
         <P style={{ marginTop: 20 }}>We also believe in giving back. A portion of every order goes toward youth athletics programs across the country, because the next generation of athletes deserves support on and off the field.</P>
 
@@ -701,7 +701,7 @@ function ContactPage({ nav }) {
             {[
               { icon: <Icon.Mail />, title: "Email", text: "support@sportsvestis.com" },
               { icon: <Icon.Phone />, title: "Phone", text: "+1 (555) 123-4567" },
-              { icon: <Icon.MapPin />, title: "Location", text: "United States — FL & TX" },
+              { icon: <Icon.MapPin />, title: "Location", text: "United States, FL & TX" },
             ].map((c, i) => (
               <div key={i} style={{ display: "flex", gap: 16, alignItems: "center", marginBottom: 20 }}>
                 <div className="trust-icon-box">{c.icon}</div>
@@ -1510,7 +1510,7 @@ function AdminDashboard({ nav }) {
                             <td style={{ padding: "10px 14px", fontWeight: 600 }}>{p.name}</td>
                             <td style={{ padding: "10px 14px", textTransform: "capitalize" }}>{p.cat}</td>
                             <td style={{ padding: "10px 14px", fontWeight: 700, color: "#00b4ff" }}>${p.price.toFixed(2)}</td>
-                            <td style={{ padding: "10px 14px" }}>{p.badge ? <span style={{ padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 700, background: p.badge === "Best Seller" ? "rgba(0,180,255,.15)" : p.badge === "Hot" ? "rgba(255,60,60,.15)" : "rgba(123,47,247,.15)", color: p.badge === "Best Seller" ? "#00b4ff" : p.badge === "Hot" ? "#ff4444" : "#7b2ff7" }}>{p.badge}</span> : <span style={{ color: "rgba(255,255,255,.2)" }}>—</span>}</td>
+                            <td style={{ padding: "10px 14px" }}>{p.badge ? <span style={{ padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 700, background: p.badge === "Best Seller" ? "rgba(0,180,255,.15)" : p.badge === "Hot" ? "rgba(255,60,60,.15)" : "rgba(123,47,247,.15)", color: p.badge === "Best Seller" ? "#00b4ff" : p.badge === "Hot" ? "#ff4444" : "#7b2ff7" }}>{p.badge}</span> : <span style={{ color: "rgba(255,255,255,.2)" }}>-</span>}</td>
                             <td style={{ padding: "10px 14px" }}>
                               <div style={{ display: "flex", gap: 6 }}>
                                 <button onClick={() => { setEditingProduct(p); setFormData({ name: p.name, price: p.price, cat: p.cat, badge: p.badge || "", desc: p.desc || "" }); setShowAddForm(true); }} style={{ padding: "6px 12px", borderRadius: 8, background: "rgba(0,180,255,.1)", border: "1px solid rgba(0,180,255,.2)", color: "#00b4ff", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Edit</button>
@@ -1920,7 +1920,7 @@ export default function App() {
 
       {/* ═══ Page Content ═══ */}
       {page === "home" && <HomePage nav={nav} addToCart={addToCart} cur={currency} sym={sym} conv={conv} />}
-      {page === "shop" && <ShopPage nav={nav} addToCart={addToCart} sym={sym} conv={conv} initCat={pageArg} />}
+      {page === "shop" && <ShopPage key={pageArg || "all"} nav={nav} addToCart={addToCart} sym={sym} conv={conv} initCat={pageArg} />}
       {page === "product" && <ProductPage nav={nav} addToCart={addToCart} sym={sym} conv={conv} productId={pageArg} />}
       {page === "about" && <AboutPage nav={nav} />}
       {page === "contact" && <ContactPage nav={nav} />}
