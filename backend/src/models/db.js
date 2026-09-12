@@ -48,6 +48,7 @@ db.exec(`
     price_cents INTEGER NOT NULL CHECK(price_cents > 0),
     category    TEXT NOT NULL,
     badge       TEXT,
+    image_url   TEXT,
     sizes       TEXT NOT NULL DEFAULT '["S","M","L","XL","2XL"]',
     colors      TEXT NOT NULL DEFAULT '["Black","White","Navy","Red"]',
     stock       INTEGER NOT NULL DEFAULT 100,
@@ -92,6 +93,14 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_orders_user ON orders(user_id);
   CREATE INDEX IF NOT EXISTS idx_refresh_user ON refresh_tokens(user_id);
 `);
+
+// ── Migration: add image_url to databases created before this column existed ──
+// CREATE TABLE IF NOT EXISTS only applies to brand-new databases, so existing
+// installs need the column added explicitly. Safe to run every startup.
+const productColumns = db.prepare("PRAGMA table_info(products)").all();
+if (!productColumns.some(c => c.name === "image_url")) {
+  db.exec("ALTER TABLE products ADD COLUMN image_url TEXT");
+}
 
 // ── Seed products if empty ───────────────────────────────────────────────
 const count = db.prepare("SELECT COUNT(*) as c FROM products").get();

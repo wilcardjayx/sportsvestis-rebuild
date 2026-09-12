@@ -362,7 +362,11 @@ function ProductCard({ p, nav, addToCart, sym, conv }) {
     <div className="glass-card" style={{ padding: 10 }}>
       <div className="product-img-wrap" style={{ cursor: "pointer" }} onClick={() => nav("product", p.id)}>
         {p.badge && <span className={`product-badge ${p.badge === "Best Seller" ? "badge-best" : p.badge === "Hot" ? "badge-hot" : "badge-new"}`}>{p.badge}</span>}
-        <ImgPlaceholder label={p.name} rounded={14} />
+        {p.img ? (
+          <img src={p.img} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 14, display: "block" }} />
+        ) : (
+          <ImgPlaceholder label={p.name} rounded={14} />
+        )}
         <div className="quick-add" style={{ position: "absolute", bottom: 10, left: 10, right: 10 }}>
           <button onClick={e => { e.stopPropagation(); addToCart(p); }} style={{ width: "100%", padding: 10, borderRadius: 12, background: "rgba(0,180,255,.9)", backdropFilter: "blur(10px)", color: "#fff", fontWeight: 600, fontSize: 12, letterSpacing: ".3px", cursor: "pointer", border: "none", fontFamily: "inherit" }}>
             Quick Add: {sym}{conv(p.price)}
@@ -496,7 +500,11 @@ function ProductPage({ nav, addToCart, sym, conv, productId }) {
         <div className="pdp-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 48, marginBottom: 60 }}>
           {/* Images */}
           <div>
-            <ImgPlaceholder label={`${p.name}: Main Image`} aspect="4/5" rounded={20} style={{ marginBottom: 12 }} />
+            {p.img ? (
+              <img src={p.img} alt={p.name} style={{ width: "100%", aspectRatio: "4/5", objectFit: "cover", borderRadius: 20, marginBottom: 12, display: "block" }} />
+            ) : (
+              <ImgPlaceholder label={`${p.name}: Main Image`} aspect="4/5" rounded={20} style={{ marginBottom: 12 }} />
+            )}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10 }}>
               {[1, 2, 3, 4].map(n => <ImgPlaceholder key={n} label={`View ${n}`} aspect="1/1" rounded={12} />)}
             </div>
@@ -1139,8 +1147,47 @@ function AdminDashboard({ nav }) {
   };
 
   // Product form state
-  const emptyProduct = { name: "", price: 29.99, cat: "football", badge: "", desc: "" };
+  const emptyProduct = { name: "", price: 29.99, cat: "football", badge: "", desc: "", img: null };
   const [formData, setFormData] = useState(emptyProduct);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
+
+  // Uploads the picked file to the backend, which validates it server-side
+  // (real file signature check, size cap, safe generated filename) and
+  // returns a URL we then attach to the product.
+  const handleImageUpload = async (file) => {
+    if (!file) return;
+    setUploadError("");
+
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      setUploadError("Only JPG, PNG, or WEBP files are allowed.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadError("Image must be under 5MB.");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const body = new FormData();
+      body.append("image", file);
+      const resp = await fetch("/api/upload", {
+        method: "POST",
+        credentials: "include",
+        body,
+      });
+      const data = await resp.json();
+      if (resp.ok) {
+        setFormData(p => ({ ...p, img: data.url }));
+      } else {
+        setUploadError(data.error || "Upload failed.");
+      }
+    } catch (e) {
+      setUploadError("Could not reach the server. Is the backend running?");
+    }
+    setUploading(false);
+  };
 
   const handleSaveProduct = () => {
     if (!formData.name || !formData.price || !formData.cat) return;
@@ -1479,6 +1526,40 @@ function AdminDashboard({ nav }) {
                         </select>
                       </div>
                       <div style={{ gridColumn: "1/-1" }}>
+                        <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 5, color: "rgba(255,255,255,.5)" }}>Product Image</label>
+                        <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
+                          {/* Preview box */}
+                          <div style={{ width: 90, height: 90, borderRadius: 12, flexShrink: 0, overflow: "hidden", background: "rgba(255,255,255,.03)", border: "1px dashed rgba(255,255,255,.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            {formData.img ? (
+                              <img src={formData.img} alt="Preview" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                            ) : (
+                              <span style={{ fontSize: 10, color: "rgba(255,255,255,.25)" }}>No image</span>
+                            )}
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <label style={{
+                              display: "inline-flex", alignItems: "center", gap: 8, padding: "10px 18px",
+                              borderRadius: 10, background: "rgba(0,180,255,.1)", border: "1px solid rgba(0,180,255,.2)",
+                              color: "#00b4ff", fontSize: 13, fontWeight: 600, cursor: uploading ? "wait" : "pointer",
+                            }}>
+                              {uploading ? "Uploading..." : formData.img ? "Change Image" : "Upload Image"}
+                              <input
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp"
+                                disabled={uploading}
+                                onChange={e => handleImageUpload(e.target.files?.[0])}
+                                style={{ display: "none" }}
+                              />
+                            </label>
+                            {formData.img && (
+                              <button onClick={() => setFormData(p => ({ ...p, img: null }))} style={{ marginLeft: 10, fontSize: 12, color: "rgba(255,255,255,.35)", textDecoration: "underline", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}>Remove</button>
+                            )}
+                            <p style={{ fontSize: 11, color: "rgba(255,255,255,.3)", marginTop: 8 }}>JPG, PNG, or WEBP. Max 5MB.</p>
+                            {uploadError && <p style={{ fontSize: 12, color: "#ff6666", marginTop: 6 }}>{uploadError}</p>}
+                          </div>
+                        </div>
+                      </div>
+                      <div style={{ gridColumn: "1/-1" }}>
                         <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 5, color: "rgba(255,255,255,.5)" }}>Description</label>
                         <textarea value={formData.desc} onChange={e => setFormData(p => ({ ...p, desc: e.target.value }))} placeholder="Describe the product..." className="glass-input" rows={3} style={{ width: "100%", resize: "vertical" }} />
                       </div>
@@ -1505,7 +1586,11 @@ function AdminDashboard({ nav }) {
                         {products.map(p => (
                           <tr key={p.id} style={{ borderBottom: "1px solid rgba(255,255,255,.03)" }}>
                             <td style={{ padding: "10px 14px" }}>
-                              <div style={{ width: 44, height: 44, borderRadius: 8, background: "rgba(255,255,255,.04)", border: "1px dashed rgba(255,255,255,.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 8, color: "rgba(255,255,255,.2)" }}>IMG</div>
+                              {p.img ? (
+                                <img src={p.img} alt={p.name} style={{ width: 44, height: 44, borderRadius: 8, objectFit: "cover", display: "block" }} />
+                              ) : (
+                                <div style={{ width: 44, height: 44, borderRadius: 8, background: "rgba(255,255,255,.04)", border: "1px dashed rgba(255,255,255,.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 8, color: "rgba(255,255,255,.2)" }}>IMG</div>
+                              )}
                             </td>
                             <td style={{ padding: "10px 14px", fontWeight: 600 }}>{p.name}</td>
                             <td style={{ padding: "10px 14px", textTransform: "capitalize" }}>{p.cat}</td>
@@ -1513,7 +1598,7 @@ function AdminDashboard({ nav }) {
                             <td style={{ padding: "10px 14px" }}>{p.badge ? <span style={{ padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 700, background: p.badge === "Best Seller" ? "rgba(0,180,255,.15)" : p.badge === "Hot" ? "rgba(255,60,60,.15)" : "rgba(123,47,247,.15)", color: p.badge === "Best Seller" ? "#00b4ff" : p.badge === "Hot" ? "#ff4444" : "#7b2ff7" }}>{p.badge}</span> : <span style={{ color: "rgba(255,255,255,.2)" }}>-</span>}</td>
                             <td style={{ padding: "10px 14px" }}>
                               <div style={{ display: "flex", gap: 6 }}>
-                                <button onClick={() => { setEditingProduct(p); setFormData({ name: p.name, price: p.price, cat: p.cat, badge: p.badge || "", desc: p.desc || "" }); setShowAddForm(true); }} style={{ padding: "6px 12px", borderRadius: 8, background: "rgba(0,180,255,.1)", border: "1px solid rgba(0,180,255,.2)", color: "#00b4ff", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Edit</button>
+                                <button onClick={() => { setEditingProduct(p); setFormData({ name: p.name, price: p.price, cat: p.cat, badge: p.badge || "", desc: p.desc || "", img: p.img || null }); setUploadError(""); setShowAddForm(true); }} style={{ padding: "6px 12px", borderRadius: 8, background: "rgba(0,180,255,.1)", border: "1px solid rgba(0,180,255,.2)", color: "#00b4ff", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Edit</button>
                                 <button onClick={() => handleDeleteProduct(p.id)} style={{ padding: "6px 12px", borderRadius: 8, background: "rgba(255,60,60,.1)", border: "1px solid rgba(255,60,60,.2)", color: "#ff6666", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Delete</button>
                               </div>
                             </td>
@@ -2024,7 +2109,11 @@ export default function App() {
             </div>
           ) : cartItems.map(item => (
             <div key={item.id} style={{ display: "flex", gap: 14, marginBottom: 16, padding: 14, borderRadius: 14, background: "rgba(255,255,255,.03)", border: "1px solid rgba(255,255,255,.05)" }}>
-              <div style={{ width: 68, height: 68, borderRadius: 10, background: "rgba(255,255,255,.04)", border: "1px dashed rgba(255,255,255,.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, color: "rgba(255,255,255,.2)", flexShrink: 0, textAlign: "center", padding: 4 }}>IMG</div>
+              {item.img ? (
+                <img src={item.img} alt={item.name} style={{ width: 68, height: 68, borderRadius: 10, objectFit: "cover", flexShrink: 0, display: "block" }} />
+              ) : (
+                <div style={{ width: 68, height: 68, borderRadius: 10, background: "rgba(255,255,255,.04)", border: "1px dashed rgba(255,255,255,.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, color: "rgba(255,255,255,.2)", flexShrink: 0, textAlign: "center", padding: 4 }}>IMG</div>
+              )}
               <div style={{ flex: 1 }}>
                 <p style={{ fontWeight: 600, fontSize: 13, marginBottom: 6 }}>{item.name}</p>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
@@ -2089,7 +2178,11 @@ export default function App() {
                   <div key={p.id} onClick={() => { setSearchOpen(false); nav("product", p.id); }} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 8px", borderRadius: 10, cursor: "pointer", transition: "background .2s" }}
                     onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,.04)"}
                     onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-                    <div style={{ width: 40, height: 40, borderRadius: 8, background: "rgba(255,255,255,.04)", border: "1px dashed rgba(255,255,255,.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 8, color: "rgba(255,255,255,.2)", flexShrink: 0 }}>IMG</div>
+                    {p.img ? (
+                      <img src={p.img} alt={p.name} style={{ width: 40, height: 40, borderRadius: 8, objectFit: "cover", flexShrink: 0, display: "block" }} />
+                    ) : (
+                      <div style={{ width: 40, height: 40, borderRadius: 8, background: "rgba(255,255,255,.04)", border: "1px dashed rgba(255,255,255,.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 8, color: "rgba(255,255,255,.2)", flexShrink: 0 }}>IMG</div>
+                    )}
                     <div>
                       <p style={{ fontSize: 14, fontWeight: 600 }}>{p.name}</p>
                       <p style={{ fontSize: 13, color: "#00b4ff" }}>{sym}{conv(p.price)}</p>

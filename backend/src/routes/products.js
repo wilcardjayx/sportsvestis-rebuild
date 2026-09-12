@@ -116,7 +116,7 @@ router.get("/:slug", (req, res) => {
 // ── POST /api/products — admin only ──────────────────────────────────────
 router.post("/", requireAuth, requireAdmin, sanitizeBody(2000), (req, res) => {
   try {
-    const { name, slug, description, price_cents, category, badge } = req.body;
+    const { name, slug, description, price_cents, category, badge, image_url } = req.body;
 
     if (!name || !slug || !price_cents || !category) {
       return res.status(400).json({ error: "Name, slug, price, and category are required." });
@@ -130,6 +130,13 @@ router.post("/", requireAuth, requireAdmin, sanitizeBody(2000), (req, res) => {
       return res.status(400).json({ error: "Slug must be lowercase alphanumeric with dashes." });
     }
 
+    // image_url must be either empty, or a path our own upload endpoint
+    // produced (/uploads/...), or a normal http(s) URL — never a bare
+    // string that could be interpreted as something else client-side.
+    if (image_url && !/^(\/uploads\/[a-zA-Z0-9._-]+|https?:\/\/.+)$/.test(image_url)) {
+      return res.status(400).json({ error: "Invalid image URL." });
+    }
+
     const price = parseInt(price_cents, 10);
     if (isNaN(price) || price <= 0) {
       return res.status(400).json({ error: "Price must be a positive integer (cents)." });
@@ -137,9 +144,9 @@ router.post("/", requireAuth, requireAdmin, sanitizeBody(2000), (req, res) => {
 
     const id = uuid();
     db.prepare(`
-      INSERT INTO products (id, name, slug, description, price_cents, category, badge)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(id, name, slug, description || "", price, category.toLowerCase(), badge || null);
+      INSERT INTO products (id, name, slug, description, price_cents, category, badge, image_url)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(id, name, slug, description || "", price, category.toLowerCase(), badge || null, image_url || null);
 
     res.status(201).json({ id, message: "Product created." });
   } catch (err) {
@@ -162,6 +169,7 @@ function formatProduct(row) {
     price_cents: row.price_cents,
     category: row.category,
     badge: row.badge,
+    image_url: row.image_url || null,
     sizes: JSON.parse(row.sizes),
     colors: JSON.parse(row.colors),
     stock: row.stock,

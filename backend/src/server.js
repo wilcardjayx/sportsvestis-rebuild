@@ -84,6 +84,17 @@ app.use("/api/products", require("./routes/products"));
 app.use("/api/orders", require("./routes/orders"));
 app.use("/api/contact", require("./routes/contact"));
 app.use("/api/admin", require("./routes/admin"));
+app.use("/api/upload", require("./routes/upload"));
+
+// ── Serve uploaded product images ────────────────────────────────────────
+// Static files only — no execution, no directory listing, no traversal
+// outside this folder (express.static resolves paths safely by default).
+const path = require("path");
+app.use("/uploads", express.static(path.join(__dirname, "..", "uploads"), {
+  maxAge: "7d",
+  dotfiles: "deny",
+  index: false,
+}));
 
 // ── Health check ─────────────────────────────────────────────────────────
 app.get("/api/health", (req, res) => {

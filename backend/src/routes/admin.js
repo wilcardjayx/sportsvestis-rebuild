@@ -162,7 +162,7 @@ router.delete("/messages/:id", (req, res) => {
 router.put("/products/:id", sanitizeBody(2000), (req, res) => {
   try {
     const { id } = req.params;
-    const { name, description, price_cents, category, badge, active } = req.body;
+    const { name, description, price_cents, category, badge, active, image_url } = req.body;
 
     if (!/^[0-9a-f-]{36}$/.test(id)) {
       return res.status(400).json({ error: "Invalid product ID." });
@@ -181,6 +181,12 @@ router.put("/products/:id", sanitizeBody(2000), (req, res) => {
     if (category) { fields.push("category = ?"); params.push(category); }
     if (badge !== undefined) { fields.push("badge = ?"); params.push(badge || null); }
     if (active !== undefined) { fields.push("active = ?"); params.push(active ? 1 : 0); }
+    if (image_url !== undefined) {
+      if (image_url && !/^(\/uploads\/[a-zA-Z0-9._-]+|https?:\/\/.+)$/.test(image_url)) {
+        return res.status(400).json({ error: "Invalid image URL." });
+      }
+      fields.push("image_url = ?"); params.push(image_url || null);
+    }
 
     if (fields.length === 0) {
       return res.status(400).json({ error: "No fields to update." });
