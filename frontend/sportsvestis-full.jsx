@@ -1714,8 +1714,22 @@ function AdminDashboard({ nav }) {
    MAIN APP — ROUTING & LAYOUT
    ═══════════════════════════════════════════════════════════════════════════ */
 export default function App() {
-  const [page, setPage] = useState("home");
-  const [pageArg, setPageArg] = useState(null);
+  // Read the real URL path on first load so /admin (and other routes) work
+  // when typed directly, bookmarked, or refreshed, not just via in-app clicks.
+  const getPageFromPath = () => {
+    if (typeof window === "undefined") return { page: "home", arg: null };
+    const path = window.location.pathname.replace(/^\/|\/$/g, ""); // strip slashes
+    const known = ["home", "shop", "product", "about", "contact", "login", "admin"];
+    if (!path) return { page: "home", arg: null };
+    const [base, rawArg] = path.split("/");
+    // Product IDs are numbers in the data set — convert back from the URL string
+    const arg = rawArg && /^\d+$/.test(rawArg) ? Number(rawArg) : (rawArg || null);
+    return known.includes(base) ? { page: base, arg } : { page: "home", arg: null };
+  };
+  const initial = getPageFromPath();
+
+  const [page, setPage] = useState(initial.page);
+  const [pageArg, setPageArg] = useState(initial.arg);
   const [menuOpen, setMenuOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const [cartItems, setCartItems] = useState([]);
@@ -1728,6 +1742,25 @@ export default function App() {
   useEffect(() => {
     const h = () => setScrolled(window.scrollY > 40);
     window.addEventListener("scroll", h); return () => window.removeEventListener("scroll", h);
+  }, []);
+
+  // Keep the address bar in sync so /admin, /shop, etc. are real,
+  // shareable, refreshable URLs, not just in-memory state.
+  useEffect(() => {
+    const path = page === "home" ? "/" : pageArg ? `/${page}/${pageArg}` : `/${page}`;
+    if (window.location.pathname !== path) {
+      window.history.pushState({}, "", path);
+    }
+  }, [page, pageArg]);
+
+  // Support browser back/forward buttons
+  useEffect(() => {
+    const onPopState = () => {
+      const { page: p, arg } = getPageFromPath();
+      setPage(p); setPageArg(arg);
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
   }, []);
 
   const nav = useCallback((p, arg = null) => {
