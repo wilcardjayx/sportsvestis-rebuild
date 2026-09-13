@@ -85,6 +85,7 @@ app.use("/api/orders", require("./routes/orders"));
 app.use("/api/contact", require("./routes/contact"));
 app.use("/api/admin", require("./routes/admin"));
 app.use("/api/upload", require("./routes/upload"));
+app.use("/api/slides", require("./routes/slides"));
 
 // ── Serve uploaded product images ────────────────────────────────────────
 // Static files only — no execution, no directory listing, no traversal

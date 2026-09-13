@@ -86,6 +86,18 @@ db.exec(`
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
+  CREATE TABLE IF NOT EXISTS hero_slides (
+    id          TEXT PRIMARY KEY,
+    title       TEXT,
+    subtitle    TEXT,
+    cta_label   TEXT,
+    cta_target  TEXT NOT NULL DEFAULT 'shop',
+    image_url   TEXT,
+    sort_order  INTEGER NOT NULL DEFAULT 0,
+    active      INTEGER NOT NULL DEFAULT 1,
+    created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
   -- Index for fast lookups
   CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
   CREATE INDEX IF NOT EXISTS idx_products_category ON products(category);
@@ -127,6 +139,37 @@ if (count.c === 0) {
     { id: uuid(), name: "Grand Slam Vintage Tee", slug: "grand-slam-vintage-tee", desc: "Grand slam with Americana flair.", price: 2999, cat: "baseball", badge: null },
     { id: uuid(), name: "Kickflip Culture Tee", slug: "kickflip-culture-tee", desc: "Skate culture meets street art.", price: 3299, cat: "skateboard", badge: null },
   ]);
+}
+
+// ── Migration: add hero_slides table to databases created before it existed ──
+const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all().map(t => t.name);
+if (!tables.includes("hero_slides")) {
+  db.exec(`
+    CREATE TABLE hero_slides (
+      id          TEXT PRIMARY KEY,
+      title       TEXT,
+      subtitle    TEXT,
+      cta_label   TEXT,
+      cta_target  TEXT NOT NULL DEFAULT 'shop',
+      image_url   TEXT,
+      sort_order  INTEGER NOT NULL DEFAULT 0,
+      active      INTEGER NOT NULL DEFAULT 1,
+      created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+}
+
+// ── Seed a few starter promo slides if none exist yet ────────────────────
+const slideCount = db.prepare("SELECT COUNT(*) as c FROM hero_slides").get();
+if (slideCount.c === 0) {
+  const insertSlide = db.prepare(`
+    INSERT INTO hero_slides (id, title, subtitle, cta_label, cta_target, sort_order)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `);
+  const { v4: uuidSlide } = require("uuid");
+  insertSlide.run(uuidSlide(), "Wear Your Passion", "Bold graphic tees for every sport, every season.", "Shop All", "shop", 0);
+  insertSlide.run(uuidSlide(), "Game Day Essentials", "From tailgates to touchdowns, gear up for the season.", "Shop Football", "football", 1);
+  insertSlide.run(uuidSlide(), "New Arrivals", "Fresh drops every month. Be the first to wear them.", "Shop New", "shop", 2);
 }
 
 module.exports = db;

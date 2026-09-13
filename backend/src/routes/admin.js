@@ -254,4 +254,125 @@ router.post("/create-admin", sanitizeBody(500), validateEmail(), async (req, res
   }
 });
 
+// ═══════════════════════════════════════════════════════════════════════
+// HERO SLIDES — homepage promotional slideshow (max 7 slides)
+// ═══════════════════════════════════════════════════════════════════════
+
+const MAX_SLIDES = 7;
+const VALID_CTA_TARGETS = ["shop", "football", "soccer", "basketball", "baseball", "skateboard"];
+
+// ── GET /api/admin/slides — all slides, including inactive ───────────────
+router.get("/slides", (req, res) => {
+  try {
+    const slides = db.prepare(`
+      SELECT * FROM hero_slides ORDER BY sort_order ASC
+    `).all();
+    res.json({ slides });
+  } catch (err) {
+    console.error("Admin slides list error:", err.message);
+    res.status(500).json({ error: "Internal server error." });
+  }
+});
+
+// ── POST /api/admin/slides — create a new slide ───────────────────────────
+router.post("/slides", sanitizeBody(1000), (req, res) => {
+  try {
+    const { title, subtitle, cta_label, cta_target, image_url } = req.body;
+
+    const currentCount = db.prepare("SELECT COUNT(*) as c FROM hero_slides").get().c;
+    if (currentCount >= MAX_SLIDES) {
+      return res.status(400).json({ error: `Maximum of ${MAX_SLIDES} slides allowed. Delete one first.` });
+    }
+
+    const target = cta_target && VALID_CTA_TARGETS.includes(cta_target) ? cta_target : "shop";
+
+    if (image_url && !/^(\/uploads\/[a-zA-Z0-9._-]+|https?:\/\/.+)$/.test(image_url)) {
+      return res.status(400).json({ error: "Invalid image URL." });
+    }
+
+    const maxOrder = db.prepare("SELECT COALESCE(MAX(sort_order), -1) as m FROM hero_slides").get().m;
+    const id = uuid();
+
+    db.prepare(`
+      INSERT INTO hero_slides (id, title, subtitle, cta_label, cta_target, image_url, sort_order)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run(id, title || "", subtitle || "", cta_label || "Shop Now", target, image_url || null, maxOrder + 1);
+
+    res.status(201).json({ id, message: "Slide created." });
+  } catch (err) {
+    console.error("Create slide error:", err.message);
+    res.status(500).json({ error: "Internal server error." });
+  }
+});
+
+// ── PUT /api/admin/slides/:id — update a slide ────────────────────────────
+router.put("/slides/:id", sanitizeBody(1000), (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, subtitle, cta_label, cta_target, image_url, active, sort_order } = req.body;
+
+    if (!/^[0-9a-f-]{36}$/.test(id)) {
+      return res.status(400).json({ error: "Invalid slide ID." });
+    }
+
+    const fields = [];
+    const params = [];
+
+    if (title !== undefined) { fields.push("title = ?"); params.push(title); }
+    if (subtitle !== undefined) { fields.push("subtitle = ?"); params.push(subtitle); }
+    if (cta_label !== undefined) { fields.push("cta_label = ?"); params.push(cta_label); }
+    if (cta_target !== undefined) {
+      if (!VALID_CTA_TARGETS.includes(cta_target)) {
+        return res.status(400).json({ error: "Invalid CTA target." });
+      }
+      fields.push("cta_target = ?"); params.push(cta_target);
+    }
+    if (image_url !== undefined) {
+      if (image_url && !/^(\/uploads\/[a-zA-Z0-9._-]+|https?:\/\/.+)$/.test(image_url)) {
+        return res.status(400).json({ error: "Invalid image URL." });
+      }
+      fields.push("image_url = ?"); params.push(image_url || null);
+    }
+    if (active !== undefined) { fields.push("active = ?"); params.push(active ? 1 : 0); }
+    if (sort_order !== undefined) {
+      const so = parseInt(sort_order, 10);
+      if (!isNaN(so)) { fields.push("sort_order = ?"); params.push(so); }
+    }
+
+    if (fields.length === 0) {
+      return res.status(400).json({ error: "No fields to update." });
+    }
+
+    params.push(id);
+    const result = db.prepare(`UPDATE hero_slides SET ${fields.join(", ")} WHERE id = ?`).run(...params);
+
+    if (result.changes === 0) {
+      return res.status(404).json({ error: "Slide not found." });
+    }
+
+    res.json({ message: "Slide updated." });
+  } catch (err) {
+    console.error("Update slide error:", err.message);
+    res.status(500).json({ error: "Internal server error." });
+  }
+});
+
+// ── DELETE /api/admin/slides/:id ──────────────────────────────────────────
+router.delete("/slides/:id", (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!/^[0-9a-f-]{36}$/.test(id)) {
+      return res.status(400).json({ error: "Invalid slide ID." });
+    }
+    const result = db.prepare("DELETE FROM hero_slides WHERE id = ?").run(id);
+    if (result.changes === 0) {
+      return res.status(404).json({ error: "Slide not found." });
+    }
+    res.json({ message: "Slide deleted." });
+  } catch (err) {
+    console.error("Delete slide error:", err.message);
+    res.status(500).json({ error: "Internal server error." });
+  }
+});
+
 module.exports = router;

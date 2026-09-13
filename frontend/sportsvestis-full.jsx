@@ -224,10 +224,101 @@ function TrustBar() {
    PAGES
    ═══════════════════════════════════════════════════════════════════════════ */
 
+/* ─── HERO SLIDESHOW — up to 7 admin-managed promo slides ───────────────────
+   Sits at the very top of the homepage so it's the first thing visitors
+   see, above the WebGL hero. Fetches from the backend; falls back to
+   sensible defaults if the API is unreachable. ─────────────────────────── */
+const DEFAULT_SLIDES = [
+  { id: "d1", title: "Wear Your Passion", subtitle: "Bold graphic tees for every sport, every season.", cta_label: "Shop All", cta_target: "shop", image_url: null },
+  { id: "d2", title: "Game Day Essentials", subtitle: "From tailgates to touchdowns, gear up for the season.", cta_label: "Shop Football", cta_target: "football", image_url: null },
+  { id: "d3", title: "New Arrivals", subtitle: "Fresh drops every month. Be the first to wear them.", cta_label: "Shop New", cta_target: "shop", image_url: null },
+];
+
+function HeroSlideshow({ nav }) {
+  const [slides, setSlides] = useState(DEFAULT_SLIDES);
+  const [index, setIndex] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const timerRef = useRef(null);
+
+  useEffect(() => {
+    fetch("/api/slides")
+      .then(r => r.json())
+      .then(data => {
+        if (data.slides && data.slides.length > 0) setSlides(data.slides);
+      })
+      .catch(() => {
+        // Backend offline — the default slides already in state remain visible
+      });
+  }, []);
+
+  useEffect(() => {
+    if (paused || slides.length <= 1) return;
+    timerRef.current = setInterval(() => {
+      setIndex(i => (i + 1) % slides.length);
+    }, 6000);
+    return () => clearInterval(timerRef.current);
+  }, [paused, slides.length]);
+
+  const goTo = (i) => setIndex(((i % slides.length) + slides.length) % slides.length);
+  const prev = () => goTo(index - 1);
+  const next = () => goTo(index + 1);
+  const categorySlug = (target) => (target === "shop" ? null : target);
+
+  return (
+    <section
+      style={{ position: "relative", height: "72vh", minHeight: 420, overflow: "hidden", background: "#0a0a0d" }}
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+    >
+      {slides.map((slide, i) => (
+        <div key={slide.id} style={{ position: "absolute", inset: 0, opacity: i === index ? 1 : 0, transition: "opacity .8s ease", pointerEvents: i === index ? "auto" : "none" }}>
+          {slide.image_url ? (
+            <img src={slide.image_url} alt={slide.title || ""} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          ) : (
+            <div style={{ width: "100%", height: "100%", background: "linear-gradient(135deg, #0a1a2e 0%, #1a0a2e 100%)" }}>
+              <ImgPlaceholder label="Promo Slide Image" aspect="auto" rounded={0} style={{ width: "100%", height: "100%", border: "none" }} />
+            </div>
+          )}
+          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(0deg, rgba(6,6,8,.85) 0%, rgba(6,6,8,.35) 50%, rgba(6,6,8,.5) 100%)" }} />
+          <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "0 24px" }}>
+            <div style={{ maxWidth: 640 }}>
+              {slide.title && <h2 style={{ fontSize: "clamp(28px,5vw,52px)", fontWeight: 900, letterSpacing: "-.02em", marginBottom: 14, color: "#fff", lineHeight: 1.1 }}>{slide.title}</h2>}
+              {slide.subtitle && <p style={{ fontSize: "clamp(14px,2vw,17px)", color: "rgba(255,255,255,.7)", marginBottom: 28, lineHeight: 1.6 }}>{slide.subtitle}</p>}
+              {slide.cta_label && <button className="btn-primary" onClick={() => nav("shop", categorySlug(slide.cta_target))}>{slide.cta_label}</button>}
+            </div>
+          </div>
+        </div>
+      ))}
+
+      {slides.length > 1 && (
+        <>
+          <button onClick={prev} aria-label="Previous slide" style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", zIndex: 10, width: 40, height: 40, borderRadius: "50%", background: "rgba(255,255,255,.08)", backdropFilter: "blur(10px)", border: "1px solid rgba(255,255,255,.15)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <button onClick={next} aria-label="Next slide" style={{ position: "absolute", right: 16, top: "50%", transform: "translateY(-50%)", zIndex: 10, width: 40, height: 40, borderRadius: "50%", background: "rgba(255,255,255,.08)", backdropFilter: "blur(10px)", border: "1px solid rgba(255,255,255,.15)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </>
+      )}
+
+      {slides.length > 1 && (
+        <div style={{ position: "absolute", bottom: 20, left: 0, right: 0, display: "flex", justifyContent: "center", gap: 8, zIndex: 10 }}>
+          {slides.map((_, i) => (
+            <button key={i} onClick={() => goTo(i)} aria-label={`Go to slide ${i + 1}`} style={{ width: i === index ? 24 : 8, height: 8, borderRadius: 4, background: i === index ? "#00b4ff" : "rgba(255,255,255,.3)", border: "none", cursor: "pointer", transition: "all .3s", padding: 0 }} />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
 /* ─── HOME ────────────────────────────────────────────────────────────────── */
 function HomePage({ nav, addToCart, cur, sym, conv }) {
   return (
     <>
+      {/* Promo Slideshow — first thing visitors see */}
+      <HeroSlideshow nav={nav} />
+
       {/* Hero */}
       <section style={{ position: "relative", minHeight: "92vh", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
         <LiquidGlassCanvas />
@@ -280,25 +371,6 @@ function HomePage({ nav, addToCart, cur, sym, conv }) {
           </div>
           <div style={{ textAlign: "center", marginTop: 48 }}>
             <button className="btn-secondary" onClick={() => nav("shop")}>View All Products</button>
-          </div>
-        </div>
-      </section>
-
-      {/* Featured Collection Banner */}
-      <section style={{ padding: "0 24px 80px" }}>
-        <div style={{ maxWidth: 1280, margin: "0 auto" }}>
-          <div className="glass-card" style={{ padding: 0, overflow: "hidden", borderRadius: 24 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", minHeight: 400 }} className="featured-grid">
-              <div style={{ padding: "clamp(32px,5vw,60px)", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: ".1em", color: "#00b4ff", marginBottom: 12 }}>Featured Collection</p>
-                <h2 style={{ fontSize: "clamp(28px,4vw,44px)", fontWeight: 800, letterSpacing: "-.02em", lineHeight: 1.1, marginBottom: 16 }}>Game Day<br />Essentials</h2>
-                <p style={{ fontSize: 15, color: "rgba(255,255,255,.45)", lineHeight: 1.7, marginBottom: 32, maxWidth: 380 }}>
-                  From tailgates to touchdowns. Gear up with tees that hit different. Premium fabrics, bold graphics, all-day comfort.
-                </p>
-                <button className="btn-primary" onClick={() => nav("shop")} style={{ alignSelf: "flex-start" }}>Shop Collection</button>
-              </div>
-              <ImgPlaceholder label="Featured Collection Hero Image" aspect="auto" rounded={0} style={{ height: "100%", minHeight: 300, borderRadius: 0 }} />
-            </div>
           </div>
         </div>
       </section>
@@ -848,19 +920,6 @@ function LoginPage({ nav }) {
     </div>
   );
 
-  const SocialBtn = ({ icon, label }) => (
-    <button style={{
-      flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-      padding: "12px 16px", borderRadius: 12, background: "rgba(255,255,255,.04)",
-      border: "1px solid rgba(255,255,255,.1)", fontSize: 13, fontWeight: 600,
-      transition: "all .2s", cursor: "pointer", color: "#fff", fontFamily: "inherit",
-    }}
-      onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,.08)"; e.currentTarget.style.borderColor = "rgba(255,255,255,.2)"; }}
-      onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,.04)"; e.currentTarget.style.borderColor = "rgba(255,255,255,.1)"; }}>
-      <span style={{ fontSize: 18 }}>{icon}</span> {label}
-    </button>
-  );
-
   return (
     <section style={{ minHeight: "80vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 24px 80px" }}>
       <div style={{ width: "100%", maxWidth: 440 }}>
@@ -913,17 +972,6 @@ function LoginPage({ nav }) {
             <button className="btn-primary" style={{ width: "100%", textAlign: "center", opacity: lockout > 0 ? .5 : 1, pointerEvents: lockout > 0 ? "none" : "auto" }} onClick={handleSubmit}>
               {loading ? <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><span className="login-spinner" />Signing in...</span> : "Sign In"}
             </button>
-
-            <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "24px 0" }}>
-              <span style={{ flex: 1, height: 1, background: "rgba(255,255,255,.06)" }} />
-              <span style={{ fontSize: 12, color: "rgba(255,255,255,.25)" }}>or continue with</span>
-              <span style={{ flex: 1, height: 1, background: "rgba(255,255,255,.06)" }} />
-            </div>
-
-            <div style={{ display: "flex", gap: 10 }}>
-              <SocialBtn icon="G" label="Google" />
-              <SocialBtn icon="" label="Apple" />
-            </div>
 
             <p style={{ textAlign: "center", marginTop: 24, fontSize: 14, color: "rgba(255,255,255,.4)" }}>
               Don't have an account? <button onClick={() => { setMode("signup"); setErrors({}); setPw(""); }} style={{ color: "#00b4ff", fontWeight: 600, cursor: "pointer", background: "none", border: "none", fontFamily: "inherit", fontSize: 14 }}>Create one</button>
@@ -1116,6 +1164,110 @@ function AdminDashboard({ nav }) {
     { id: 2, name: "Priya Patel", email: "priya@email.com", subject: "International shipping question", message: "Do you ship to India? What are the costs and delivery times?", date: "2026-09-09", read: true },
     { id: 3, name: "Jordan Smith", email: "jordan@email.com", subject: "Wholesale inquiry", message: "I run a sports shop and would love to carry your tees. Do you offer wholesale pricing?", date: "2026-09-08", read: false },
   ]);
+
+  // Promotional slideshow — loaded from the real backend so edits here
+  // actually reflect on the live homepage, not just local demo state.
+  const [slides, setSlides] = useState([]);
+  const [slidesLoaded, setSlidesLoaded] = useState(false);
+  const [editingSlide, setEditingSlide] = useState(null);
+  const [showSlideForm, setShowSlideForm] = useState(false);
+  const emptySlide = { title: "", subtitle: "", cta_label: "Shop Now", cta_target: "shop", image_url: null };
+  const [slideForm, setSlideForm] = useState(emptySlide);
+  const [slideUploading, setSlideUploading] = useState(false);
+  const [slideError, setSlideError] = useState("");
+  const MAX_SLIDES = 7;
+
+  const loadSlides = useCallback(async () => {
+    try {
+      const resp = await fetch("/api/admin/slides", { credentials: "include" });
+      const data = await resp.json();
+      if (resp.ok) setSlides(data.slides || []);
+    } catch (e) {
+      // backend offline — slides tab will just show empty state
+    }
+    setSlidesLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    if (adminAuth && tab === "promotions" && !slidesLoaded) loadSlides();
+  }, [adminAuth, tab, slidesLoaded, loadSlides]);
+
+  const handleSlideImageUpload = async (file) => {
+    if (!file) return;
+    setSlideError("");
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      setSlideError("Only JPG, PNG, or WEBP files are allowed.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setSlideError("Image must be under 5MB.");
+      return;
+    }
+    setSlideUploading(true);
+    try {
+      const body = new FormData();
+      body.append("image", file);
+      const resp = await fetch("/api/upload", { method: "POST", credentials: "include", body });
+      const data = await resp.json();
+      if (resp.ok) {
+        setSlideForm(p => ({ ...p, image_url: data.url }));
+      } else {
+        setSlideError(data.error || "Upload failed.");
+      }
+    } catch (e) {
+      setSlideError("Could not reach the server.");
+    }
+    setSlideUploading(false);
+  };
+
+  const handleSaveSlide = async () => {
+    setSlideError("");
+    try {
+      const method = editingSlide ? "PUT" : "POST";
+      const url = editingSlide ? `/api/admin/slides/${editingSlide.id}` : "/api/admin/slides";
+      const resp = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(slideForm),
+      });
+      const data = await resp.json();
+      if (resp.ok) {
+        setShowSlideForm(false);
+        setEditingSlide(null);
+        setSlideForm(emptySlide);
+        loadSlides();
+      } else {
+        setSlideError(data.error || "Could not save slide.");
+      }
+    } catch (e) {
+      setSlideError("Could not reach the server.");
+    }
+  };
+
+  const handleDeleteSlide = async (id) => {
+    if (!confirm("Delete this slide? This cannot be undone.")) return;
+    try {
+      await fetch(`/api/admin/slides/${id}`, { method: "DELETE", credentials: "include" });
+      loadSlides();
+    } catch (e) {
+      alert("Could not reach the server.");
+    }
+  };
+
+  const handleToggleSlideActive = async (slide) => {
+    try {
+      await fetch(`/api/admin/slides/${slide.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ active: slide.active ? 0 : 1 }),
+      });
+      loadSlides();
+    } catch (e) {
+      alert("Could not reach the server.");
+    }
+  };
 
   // Admin login — authenticates against the real backend only.
   // No hardcoded credential bypass: if the API is unreachable or the
@@ -1428,6 +1580,7 @@ function AdminDashboard({ nav }) {
             <div className="glass-card" style={{ padding: 12, borderRadius: 16 }}>
               <TabBtn id="dashboard" label="Dashboard" icon="📊" />
               <TabBtn id="products" label="Products" icon="👕" />
+              <TabBtn id="promotions" label="Promotions" icon="📢" />
               <TabBtn id="orders" label="Orders" icon="📦" count={pendingOrders} />
               <TabBtn id="customers" label="Customers" icon="👥" />
               <TabBtn id="messages" label="Messages" icon="✉️" count={unreadMessages} />
@@ -1608,6 +1761,117 @@ function AdminDashboard({ nav }) {
                     </table>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* ── PROMOTIONS TAB — homepage slideshow management ────────── */}
+            {tab === "promotions" && (
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                  <h3 style={{ fontSize: 18, fontWeight: 700 }}>Homepage Slideshow ({slides.length}/{MAX_SLIDES})</h3>
+                  <button
+                    className="btn-primary"
+                    style={{ padding: "10px 24px", fontSize: 13, opacity: slides.length >= MAX_SLIDES ? .5 : 1, pointerEvents: slides.length >= MAX_SLIDES ? "none" : "auto" }}
+                    onClick={() => { setShowSlideForm(true); setEditingSlide(null); setSlideForm(emptySlide); setSlideError(""); }}
+                  >+ Add Slide</button>
+                </div>
+                <p style={{ fontSize: 13, color: "rgba(255,255,255,.35)", marginBottom: 20 }}>
+                  These slides rotate at the top of your homepage, above everything else. Add up to {MAX_SLIDES} promotional images with a headline, subtext, and button.
+                </p>
+
+                {slides.length >= MAX_SLIDES && (
+                  <div style={{ padding: "10px 16px", borderRadius: 10, background: "rgba(255,165,0,.08)", border: "1px solid rgba(255,165,0,.2)", marginBottom: 20, fontSize: 13, color: "#ffaa55" }}>
+                    You've reached the {MAX_SLIDES}-slide limit. Delete one to add another.
+                  </div>
+                )}
+
+                {/* Add/Edit slide form */}
+                {showSlideForm && (
+                  <div className="glass-card" style={{ padding: 24, borderRadius: 16, marginBottom: 20 }}>
+                    <h4 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16 }}>{editingSlide ? "Edit Slide" : "Add New Slide"}</h4>
+
+                    <div style={{ marginBottom: 16 }}>
+                      <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 5, color: "rgba(255,255,255,.5)" }}>Slide Image</label>
+                      <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
+                        <div style={{ width: 140, height: 78, borderRadius: 12, flexShrink: 0, overflow: "hidden", background: "rgba(255,255,255,.03)", border: "1px dashed rgba(255,255,255,.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          {slideForm.image_url ? (
+                            <img src={slideForm.image_url} alt="Preview" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                          ) : (
+                            <span style={{ fontSize: 10, color: "rgba(255,255,255,.25)" }}>No image</span>
+                          )}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <label style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "10px 18px", borderRadius: 10, background: "rgba(0,180,255,.1)", border: "1px solid rgba(0,180,255,.2)", color: "#00b4ff", fontSize: 13, fontWeight: 600, cursor: slideUploading ? "wait" : "pointer" }}>
+                            {slideUploading ? "Uploading..." : slideForm.image_url ? "Change Image" : "Upload Image"}
+                            <input type="file" accept="image/jpeg,image/png,image/webp" disabled={slideUploading} onChange={e => handleSlideImageUpload(e.target.files?.[0])} style={{ display: "none" }} />
+                          </label>
+                          {slideForm.image_url && (
+                            <button onClick={() => setSlideForm(p => ({ ...p, image_url: null }))} style={{ marginLeft: 10, fontSize: 12, color: "rgba(255,255,255,.35)", textDecoration: "underline", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}>Remove</button>
+                          )}
+                          <p style={{ fontSize: 11, color: "rgba(255,255,255,.3)", marginTop: 8 }}>JPG, PNG, or WEBP. Max 5MB. Wide images (16:9 or similar) work best.</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }} className="admin-form-grid">
+                      <div style={{ gridColumn: "1/-1" }}>
+                        <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 5, color: "rgba(255,255,255,.5)" }}>Headline</label>
+                        <input value={slideForm.title} onChange={e => setSlideForm(p => ({ ...p, title: e.target.value }))} placeholder="e.g. Game Day Essentials" className="glass-input" style={{ width: "100%" }} />
+                      </div>
+                      <div style={{ gridColumn: "1/-1" }}>
+                        <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 5, color: "rgba(255,255,255,.5)" }}>Subtext</label>
+                        <input value={slideForm.subtitle} onChange={e => setSlideForm(p => ({ ...p, subtitle: e.target.value }))} placeholder="e.g. From tailgates to touchdowns, gear up for the season." className="glass-input" style={{ width: "100%" }} />
+                      </div>
+                      <div>
+                        <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 5, color: "rgba(255,255,255,.5)" }}>Button Text</label>
+                        <input value={slideForm.cta_label} onChange={e => setSlideForm(p => ({ ...p, cta_label: e.target.value }))} placeholder="e.g. Shop Now" className="glass-input" style={{ width: "100%" }} />
+                      </div>
+                      <div>
+                        <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 5, color: "rgba(255,255,255,.5)" }}>Button Links To</label>
+                        <select value={slideForm.cta_target} onChange={e => setSlideForm(p => ({ ...p, cta_target: e.target.value }))} className="currency-select" style={{ width: "100%", padding: "12px 14px", borderRadius: 12 }}>
+                          <option value="shop">Shop All</option>
+                          {CATEGORIES.map(c => <option key={c.slug} value={c.slug}>{c.name}</option>)}
+                        </select>
+                      </div>
+                    </div>
+
+                    {slideError && <p style={{ fontSize: 12, color: "#ff6666", marginTop: 12 }}>{slideError}</p>}
+
+                    <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
+                      <button className="btn-primary" style={{ padding: "10px 28px", fontSize: 13 }} onClick={handleSaveSlide}>{editingSlide ? "Save Changes" : "Add Slide"}</button>
+                      <button className="btn-secondary" style={{ padding: "10px 28px", fontSize: 13 }} onClick={() => { setShowSlideForm(false); setEditingSlide(null); }}>Cancel</button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Slides list */}
+                {slides.length === 0 && slidesLoaded ? (
+                  <div style={{ textAlign: "center", padding: "60px 0", color: "rgba(255,255,255,.3)" }}>
+                    <p style={{ fontSize: 36, marginBottom: 10 }}>📢</p>
+                    <p style={{ fontWeight: 600 }}>No slides yet</p>
+                    <p style={{ fontSize: 13, marginTop: 6 }}>Add your first promotional slide above.</p>
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                    {slides.map((s, i) => (
+                      <div key={s.id} className="glass-card" style={{ padding: 16, borderRadius: 14, display: "flex", gap: 16, alignItems: "center", opacity: s.active ? 1 : .5 }}>
+                        <span style={{ fontSize: 12, color: "rgba(255,255,255,.3)", fontWeight: 700, width: 20, flexShrink: 0 }}>{i + 1}</span>
+                        <div style={{ width: 100, height: 56, borderRadius: 10, flexShrink: 0, overflow: "hidden", background: "rgba(255,255,255,.03)", border: "1px dashed rgba(255,255,255,.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          {s.image_url ? <img src={s.image_url} alt={s.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span style={{ fontSize: 9, color: "rgba(255,255,255,.25)" }}>No image</span>}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{ fontWeight: 700, fontSize: 14, marginBottom: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.title || "(No headline)"}</p>
+                          <p style={{ fontSize: 12, color: "rgba(255,255,255,.35)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.subtitle || "No subtext"}</p>
+                        </div>
+                        <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                          <button onClick={() => handleToggleSlideActive(s)} style={{ padding: "6px 12px", borderRadius: 8, background: s.active ? "rgba(0,204,102,.1)" : "rgba(255,255,255,.05)", border: `1px solid ${s.active ? "rgba(0,204,102,.2)" : "rgba(255,255,255,.1)"}`, color: s.active ? "#00cc66" : "rgba(255,255,255,.4)", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{s.active ? "Active" : "Hidden"}</button>
+                          <button onClick={() => { setEditingSlide(s); setSlideForm({ title: s.title || "", subtitle: s.subtitle || "", cta_label: s.cta_label || "Shop Now", cta_target: s.cta_target || "shop", image_url: s.image_url || null }); setSlideError(""); setShowSlideForm(true); }} style={{ padding: "6px 12px", borderRadius: 8, background: "rgba(0,180,255,.1)", border: "1px solid rgba(0,180,255,.2)", color: "#00b4ff", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Edit</button>
+                          <button onClick={() => handleDeleteSlide(s.id)} style={{ padding: "6px 12px", borderRadius: 8, background: "rgba(255,60,60,.1)", border: "1px solid rgba(255,60,60,.2)", color: "#ff6666", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Delete</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
